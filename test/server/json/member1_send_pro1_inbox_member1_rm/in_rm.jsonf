@@ -1,0 +1,8 @@
+{
+  "do": "rm",
+  "with": {
+    "token": %ld,
+    "msg_id": %d
+    },
+  }
+}

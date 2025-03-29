@@ -1,0 +1,12 @@
+{
+  "$schema": "./schemas/config.json",
+  "max_msg_length": 1000,
+  "page_inbox": 20,
+  "page_outbox": 20,
+  "rate_limit_h": 90,
+  "rate_limit_m": 12,
+  "block_for": 86400,
+  "port": 4113,
+  "log_file": "-",
+  "backlog": 1
+}

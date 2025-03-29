@@ -1,0 +1,14 @@
+[
+  {
+    "do": "logout",
+    "with": {
+      "token": %ld
+    }
+  },
+  {
+    "do": "logout",
+    "with": {
+      "token": %ld
+    }
+  }
+]

@@ -1,0 +1,15 @@
+[
+  {
+    "body": [
+      {
+        "msg_id": 1,
+        "sent_at": {
+          "$fmt": "%*ld"
+        },
+        "content": "Bonjour pro_1 (1er message)",
+        "sender": 5,
+        "recipient": 1
+      }
+    ]
+  }
+]

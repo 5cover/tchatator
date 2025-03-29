@@ -1,0 +1,8 @@
+{
+  "$schema": "../schemas/request.json",
+  "do": "login",
+  "with": {
+    "api_key": "ed33c143-5752-4543-a821-00a487955a28",
+    "password": "413417"
+  }
+}

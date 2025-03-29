@@ -1,0 +1,72 @@
+/**
+ * \mainpage Tchatator Documentation
+ *
+ * \section intro_sec Introduction
+ *
+ * Welcome to the documentation for Tchatator, a messaging system designed to facilitate asynchronous communication between professionals and clients on the TripEnArvor platform. This documentation provides detailed information about the project's architecture, protocols, and implementation.
+ *
+ * \section overview_sec Overview
+ *
+ * Tchatator is an API-based messaging system that allows professionals and clients to exchange text messages asynchronously. The system is designed to be robust, secure, and easy to use, with a focus on standardizing the exchange of messages between different systems.
+ *
+ * \section features_sec Features
+ *
+ * - Asynchronous messaging between professionals and clients.
+ * - Three modes of access: professional, client, and administrator.
+ * - Detailed protocol for structured and secure message exchange.
+ * - Extensive error handling and security measures to prevent SPAM/FLOOD.
+ * - Configurable parameters for message size, rate limiting, and more.
+ * - Detailed logging for monitoring and debugging.
+ *
+ * \section modules_sec Modules
+ *
+ * The project is organized into several modules, each responsible for different aspects of the system. Below is a brief overview of the main modules:
+ *
+ * \subsection cfg_sec Configuration Module (cfg)
+ *
+ * The \ref cfg.h module handles the server configuration. It reads configuration parameters from a file at startup.
+ *
+ * \subsection db_sec Database Module (db)
+ *
+ * The \ref db.h module provides the Data Access Layer (DAL) for interacting with the database. It handles all database operations, including storing, retrieving, and managing messages. This module ensures that all database interactions are consistent and efficient.
+ *
+ * \subsection server_sec Server Module (server)
+ *
+ * The \ref server.h module manages the dynamic state of the server. It handles incoming connections, processes requests, and maintains the server's state. This module is responsible for the core functionality of the server, including message handling and client management.
+ *
+ * \subsection action_sec Action Module (action)
+ *
+ * The \ref action.h module is responsible for parsing and interpreting client requests. It defines the protocol for communicating with the server and ensures that all requests are handled correctly. This module plays a crucial role in ensuring that the server's behavior is consistent with the defined protocol.
+ *
+ * \subsection util_sec Utility Module (util)
+ *
+ * The \ref util.h module provides general utilities and helper functions used throughout the project. It includes functions for handling common tasks such as string manipulation, date/time operations, and more. This module helps to keep the codebase clean and modular.
+ *
+ * \subsection uuid_sec UUID Module (uuid)
+ *
+ * The \ref uuid.h module generates and manages Universally Unique Identifiers (UUIDs). It ensures that each message and client session has a unique identifier, which is essential for tracking and managing messages and sessions.
+ *
+ * \subsection json_sec JSON Module (json-c)
+ *
+ * The \ref json-c.h module provides a wrapper for the JSON-C library, which is used for handling JSON data. It includes additional functions and error handling mechanisms to ensure that JSON data is processed correctly and efficiently.
+ *
+ * \section protocol_sec Protocol
+ *
+ * The protocol for communicating with the Tchatator server is designed to be simple yet powerful. It supports various actions, including login, message sending, message retrieval, and more.
+ *
+ * \section security_sec Security
+ *
+ * Security is a top priority for Tchatator. The system includes several security measures to prevent SPAM/FLOOD and ensure that only authorized users can access the server. These measures include rate limiting, message size restrictions, and detailed error handling.
+ *
+ * \section logging_sec Logging
+ *
+ * The server produces detailed logs for monitoring and debugging. The logs include information about incoming requests, server responses, and any errors that occur. The logging system is configurable and can be customized to suit the needs of the administrator.
+ *
+ * \section documentation_sec Documentation
+ *
+ * This documentation provides detailed information about the project's architecture, protocols, and implementation. It is designed to be a comprehensive resource for developers, administrators, and users of the Tchatator system.
+ *
+ * \section contact_sec Contact
+ *
+ * For any questions or support, please contact the development team at [support@tripenarvor.com](mailto:support@tripenarvor.com).
+ */

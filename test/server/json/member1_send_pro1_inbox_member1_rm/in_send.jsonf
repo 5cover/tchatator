@@ -1,0 +1,8 @@
+{
+  "do": "send",
+  "with": {
+    "token": %ld,
+    "dest": "pro1",
+    "content": "Bonjour du language C :)"
+  }
+}

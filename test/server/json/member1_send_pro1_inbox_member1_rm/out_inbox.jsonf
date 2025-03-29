@@ -1,0 +1,13 @@
+[
+  {
+    "body": [
+      {
+        "msg_id": %d,
+        "sent_at": %ld,
+        "content": "Bonjour du language C :)",
+        "sender": 5,
+        "recipient": 1
+      }
+    ]
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "error": {
+      "message": "whois.with.user: invalid user key: -1",
+      "status": 400
+    }
+  }
+]

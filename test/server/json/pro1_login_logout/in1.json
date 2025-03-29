@@ -1,0 +1,7 @@
+{
+  "do": "login",
+  "with": {
+    "api_key": "bb1b5a1f-a482-4858-8c6b-f4746481cffa",
+    "password": "pro1_mdp"
+  }
+}

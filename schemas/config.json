@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "object",
+  "title": "Paramétrage",
+  "properties": {
+    "max_msg_length": {
+      "type": "integer",
+      "description": "Longueur max. d'un message en caractères.",
+      "minimum": 0
+    },
+    "page_inbox": {
+      "type": "integer",
+      "description": "Nombre maximal de messages par page renvoyés par `inbox`",
+      "minimum": 0
+    },
+    "page_outbox": {
+      "type": "integer",
+      "description": "Nombre maximal de messages par page renvoyés par `outbox`",
+      "minimum": 0
+    },
+    "rate_limit_m": {
+      "type": "integer",
+      "description": "Nombre max. de requêtes par minute.",
+      "minimum": 0
+    },
+    "rate_limit_h": {
+      "type": "integer",
+      "description": "Nombre max. de requêtes par heure.",
+      "minimum": 0
+    },
+    "block_for": {
+      "type": "integer",
+      "description": "Durée d'un blocage en secondes",
+      "minimum": 0
+    },
+    "port": {
+      "type": "integer",
+      "description": "Port",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "log_file": {
+      "type": "string",
+      "description": "Nom du fichier de log relatif au dossier courant du serveur. \"-\" indique que les logs seront affiché sur la sortie d'erreur."
+    },
+    "backlog": {
+      "type": "integer",
+      "description": "Longueur de la file d'attente de connexion",
+      "minimum": 0
+    }
+  }
+}

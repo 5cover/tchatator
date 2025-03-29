@@ -1,0 +1,8 @@
+{
+  "do": "send",
+  "with": {
+    "token": %ld,
+    "dest": %d,
+    "content": "I. Am. A. God. (i am a god)"
+  }
+}

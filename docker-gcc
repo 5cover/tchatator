@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+function host_is_iut() {
+    [[ "$(hostname)" == PCE* ]] || [[ "$(hostname)" == ALT-PCE* ]]
+    return $?
+}
+
+readonly container=413-tchatator-build-service
+readonly workdir=/work
+
+cflags=''
+lflags=''
+output=''
+
+image=gcc-mariadb-pgsql:14.2-sae34
+if host_is_iut; then
+    image=docker.iutlan.etu.univ-rennes1.fr/info/$image
+else
+    image=bigpapoo/$image
+fi
+
+eval set -- "$(getopt -o c:l:o:s -n "$0" -- "$@")"
+
+while true; do
+    case "$1" in
+    # compiler flags
+    -c)
+        shift
+        IFS=' ' read -ra cflags <<<"$1"
+        ;;
+    # linker flags
+    -l)
+        shift
+        IFS=' ' read -ra lflags <<<"$1"
+        ;;
+    # output
+    -o)
+        shift
+        output="$1"
+        ;;
+    # stop
+    -s)
+        echo -n "stopping $container... "
+        docker stop $container
+        docker rm $container
+        echo ok
+        exit
+        ;;
+    --)
+        shift
+        break
+        ;;
+    esac
+    shift
+done
+
+# ensure run container
+if ! docker ps --format '{{.Names}}' | grep -q "^$container$"; then
+    if docker ps --format '{{.Names}}' -a | grep -q "^$container$"; then
+        echo "restarting $container"
+        docker start $container
+    else
+        echo "runnning $container"
+        docker run -td --name=$container $image
+        if host_is_iut; then
+            #shellcheck disable=SC2154
+            docker exec $container sh -c "echo \"Acquire::http::Proxy \"\\\"${http_proxy}\\\"\";\" > /etc/apt/apt.conf.d/01proxy"
+        fi
+        docker exec $container apt-get -y install libjson-c-dev
+    fi
+fi
+
+# copy source code
+
+docker exec $container mkdir -p "$workdir"
+docker cp . "$container:$workdir"
+
+# run gcc
+for f in "$@"; do if [[ $f == *.c ]]; then srcs+=("$f"); fi; done
+# -ffile-prefix-map is necessary so lldb reaches breakpoints
+echo gcc -ffile-prefix-map="$workdir"="$PWD" -fdiagnostics-color "${cflags[@]}" "${srcs[@]}" "${lflags[@]}"
+
+# run gcc and copy back binaries if successful
+if docker exec -w $workdir $container gcc -ffile-prefix-map="$workdir"="$PWD" -fdiagnostics-color "${cflags[@]}" "${srcs[@]}" "${lflags[@]}" && [[ -n $output ]]; then
+    mkdir -p "$(dirname "$output")"
+    docker cp "$container:$workdir/a.out" "$output"
+fi
+
+# remove leftovers
+docker exec $container rm -r "$workdir"
