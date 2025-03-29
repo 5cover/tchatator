@@ -19,5 +19,5 @@ make
 Run tests:
 
 ```bash
-make test
+make bin/test
 ```

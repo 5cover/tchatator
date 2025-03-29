@@ -86,9 +86,9 @@ X_TESTS(DECLARE_TEST)
     .server = server,           \
 };
 
-#define OUT_JSON(NAME, suffix) "test/json/" STR(NAME) "/out" suffix ".json"
+#define OUT_JSON(NAME, suffix) "test/server/json/" STR(NAME) "/out" suffix ".json"
 #define OUT_JSONF(NAME, suffix) OUT_JSON(NAME, suffix) "f"
-#define IN_JSON(NAME, suffix) "test/json/" STR(NAME) "/in" suffix ".json"
+#define IN_JSON(NAME, suffix) "test/server/json/" STR(NAME) "/in" suffix ".json"
 #define IN_JSONF(NAME, suffix) IN_JSON(NAME, suffix) "f"
 
 // Implementation details

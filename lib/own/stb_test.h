@@ -52,7 +52,7 @@ STB_TEST_DEFINITION struct test test_start(char const *name);
 /// @brief Add a test case with the expr and name columns merged.
 #define test_case_wide(test, expr, name, ...) _stbtest_test_case(__LINE__, __FILE__, (test), (expr), NULL, (name)__VA_OPT__(, ) __VA_ARGS__)
 
-STB_TEST_DEFINITION bool _stbtest_test_case(unsigned line, char const *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...)
+STB_TEST_DEFINITION bool _stbtest_test_case(unsigned line, char *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...)
     _STBTEST_ATTR_FORMAT(printf, 6, 7);
 
 /// @brief Finish a test suite and prints the results to the provided output stream.
@@ -85,7 +85,7 @@ struct test test_start(char const *name) {
     };
 }
 
-bool _stbtest_test_case(unsigned line, char const *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...) {
+bool _stbtest_test_case(unsigned line, char *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...) {
     va_list ap;
 
     va_start(ap, fmt_name);
@@ -119,11 +119,11 @@ bool test_end(struct test *test, FILE *output) {
     int col_len_expr = sizeof "expr";
     int col_len_name = sizeof "info";
 
-    for (i = 0; i < arrlenu(test->cases); ++i) {
+    for (i = 0; i < arrlen(test->cases); ++i) {
         struct _stbtest_case const *c = &test->cases[i];
         c->ok ? ++nb_ok : ++nb_ko;
         if (c->expr) {
-            size_t len;
+            int len;
             if ((len = strlen(c->file)) > col_len_file) col_len_file = len;
             if ((len = strlen(c->expr)) > col_len_expr) col_len_expr = len;
             if ((len = strlen(c->name)) > col_len_name) col_len_name = len;
@@ -169,7 +169,7 @@ bool test_end(struct test *test, FILE *output) {
 
         // Print cases
 
-        for (i = 0; i < arrlenu(test->cases); ++i) {
+        for (i = 0; i < arrlen(test->cases); ++i) {
             struct _stbtest_case const *const c = &test->cases[i];
             char const *ok = c->ok ? "\033[32;49mOK\033[39;49m" : "\033[31;49mKO\033[39;49m";
             if (c->expr)
@@ -189,7 +189,7 @@ bool test_end(struct test *test, FILE *output) {
     }
 
     // Deallocate
-    for (i = 0; i < arrlenu(test->cases); ++i)
+    for (i = 0; i < arrlen(test->cases); ++i)
         free(test->cases[i].name); // Free test
     arrfree(test->cases);
 

@@ -4,7 +4,7 @@
 /// @date 1/02/2025
 
 #include "tchatator413/const.h"
-#include "tests.h"
+#include "server/tests.h"
 #include <stdlib.h>
 #include <tchatator413/cfg.h>
 #include <tchatator413/db.h>
