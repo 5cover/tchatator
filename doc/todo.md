@@ -1,5 +1,6 @@
 # Todo
 
+- [ ] json flexibility : use implicit conversions, remove strict variants. DOWN WITH THE JSON BUREAUCRACY!
 - [ ] change admin user id representation : there is a duplication : admin role + id = 0
 - [ ] use asprintf instead of bufffer_size and vstrfmt
 - [ ] use bcrypt hash for admin password
