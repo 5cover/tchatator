@@ -9,6 +9,7 @@
 - [ ] use uuid4_t in client?
 - [ ] write client tests
 - [ ] implement protocol stubs
+- [ ] mdoc style manpage
 
 ## bugs
 
