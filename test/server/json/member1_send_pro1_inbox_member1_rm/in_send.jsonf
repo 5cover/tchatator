@@ -1,7 +1,7 @@
 {
   "do": "send",
   "with": {
-    "token": %ld,
+    "constr": "%s",
     "dest": "pro1",
     "content": "Bonjour du language C :)"
   }

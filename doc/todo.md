@@ -1,15 +1,24 @@
 # Todo
 
-- [ ] json flexibility : use implicit conversions, remove strict variants. DOWN WITH THE JSON BUREAUCRACY!
-- [ ] change admin user id representation : there is a duplication : admin role + id = 0
+## right now
+
+- [ ] fix current single test
+- [ ] finish setting up database
+- [ ] progressively reenable tests (disabled by appending `.` to the extension)
+
+---
+
+- [x] change admin user id representation : there is a duplication : admin role + id = 0. Solution: say user with ID 0 is "root aka the super-user" and has admin permissions. Other admins can be defined.
+- [x] remove session managment: it only complicate the protocol: api keys are enough of an an authentification
 - [ ] use asprintf instead of bufffer_size and vstrfmt
 - [ ] use bcrypt hash for admin password
 - [ ] check rate limit before request parsing (limit processing to a minimum in case of spam)
-- [ ] remove session managment: it only complicate the protocol: api keys are enough of an an authentification
 - [ ] use uuid4_t in client?
 - [ ] write client tests
 - [ ] implement protocol stubs
 - [ ] mdoc style manpage
+- [ ] gendoc workflow github pages from 413
+- [ ] remove JSONf. no need for a custom format. build a json object from placeholders instead. maybe using json pointers.
 
 ## bugs
 

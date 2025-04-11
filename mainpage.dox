@@ -30,10 +30,6 @@
  *
  * The \ref db.h module provides the Data Access Layer (DAL) for interacting with the database. It handles all database operations, including storing, retrieving, and managing messages. This module ensures that all database interactions are consistent and efficient.
  *
- * \subsection server_sec Server Module (server)
- *
- * The \ref server.h module manages the dynamic state of the server. It handles incoming connections, processes requests, and maintains the server's state. This module is responsible for the core functionality of the server, including message handling and client management.
- *
  * \subsection action_sec Action Module (action)
  *
  * The \ref action.h module is responsible for parsing and interpreting client requests. It defines the protocol for communicating with the server and ensures that all requests are handled correctly. This module plays a crucial role in ensuring that the server's behavior is consistent with the defined protocol.

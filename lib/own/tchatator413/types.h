@@ -14,8 +14,6 @@
 
 /// @brief An user API key.
 typedef uuid4_t api_key_t;
-/// @brief A session token
-typedef int64_t token_t;
 /// @brief A page number (1..2^31-1)
 typedef int32_t page_number_t;
 /// @brief A PosrgreSQL SERIAL primary key value starting at 1. (1..2^31-1)
@@ -33,13 +31,18 @@ typedef enum {
     user_kind_pro_public, ///< @brief Public professionnal.
 } user_kind_t;
 
+typedef struct {
+    api_key_t api_key; ///< @brief User API key
+    char const *password; ///< @brief Provided password (@c NULL if no password provided)
+} constr_t;
+
 /// @brief A bit flags enumeration representing the roles of an user.
 typedef enum ATTR_FLAG_ENUM {
     role_admin = 1 << 0,  ///< @brief Administrator role.
     min_role = role_admin, ///< @brief Smallest value of the enumeration.
-    role_membre = 1 << 1, ///< @brief Member role.
+    role_member = 1 << 1, ///< @brief Member role.
     role_pro = 1 << 2, ///< @brief Professional role.
-    role_all = role_admin | role_membre | role_pro, ///< @brief 
+    role_all = role_admin | role_member | role_pro, ///< @brief All roles.
     max_role = role_all, ///< @brief Largest value of the enumeration.
 } role_flags_t;
 
@@ -47,8 +50,7 @@ typedef enum ATTR_FLAG_ENUM {
 typedef struct {
     /// @brief The roles of the user.
     role_flags_t role;
-    /// @brief The ID of the user or @c 0 for the administrator.
-    /// @note Invariant : if the value is @c 0, @ref user_identity_t.role contains the flag @ref role_flags_t.role_admin
+    /// @brief The ID of the user or @c 0 for the root user.
     serial_t id;
 } user_identity_t;
 

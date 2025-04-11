@@ -22,6 +22,15 @@
 
 #define SERVER_ADDR "127.0.0.1"
 
+typedef struct {
+    /// @brief Timestamp of the last request.
+    time_t last_request_at;
+    /// @brief Number of requests performed since an hour.
+    int n_requests_h;
+    /// @brief Number of requests performed since a minute.
+    int n_requests_m;
+} user_stats_t;
+
 static inline void json_object_write(json_object *obj, cfg_t *cfg, int fd) {
     size_t len;
     ssize_t bytes_written;
@@ -38,7 +47,7 @@ static inline void json_object_write(json_object *obj, cfg_t *cfg, int fd) {
     } while (len > 0);
 }
 
-static inline void interpret_request(cfg_t *cfg, db_t *db, server_t *server, int fd) {
+static inline void interpret_request(cfg_t *cfg, db_t *db, int fd) {
     cfg_log(cfg, log_info, "interpreting request from fd %d\n", fd);
 
     char buf[BUFSIZ] = { 0 };
@@ -50,7 +59,7 @@ static inline void interpret_request(cfg_t *cfg, db_t *db, server_t *server, int
 
     cfg_log(cfg, log_info, "received json input, interpreting request\n");
 
-    json_object *obj_output = tchatator413_interpret(obj_input, cfg, db, server, NULL, NULL, NULL);
+    json_object *obj_output = tchatator413_interpret(obj_input, cfg, db, NULL, NULL, NULL);
     json_object_put(obj_input);
 
     json_object_write(obj_output, cfg, fd);
@@ -110,7 +119,7 @@ static inline void close_sock(int sig) {
     gs_sock = -1;
 }
 
-int tchatator413_run_socket(cfg_t *cfg, db_t *db, server_t *server) {
+int tchatator413_run_socket(cfg_t *cfg, db_t *db) {
     // create hashmap<ip,user_stats_t> turnstile
     turnstile_entry *turnstile = NULL;
 
@@ -169,7 +178,7 @@ int tchatator413_run_socket(cfg_t *cfg, db_t *db, server_t *server) {
                 inet_ntoa(addr_connection.sin_addr),
                 ntohs(addr_connection.sin_port),
                 fd);
-            interpret_request(cfg, db, server, fd);
+            interpret_request(cfg, db, fd);
         } else {
             cfg_log(cfg, log_info, "refusing connection from %s:%d with fd %d : rate limit reached\n",
                 inet_ntoa(addr_connection.sin_addr),

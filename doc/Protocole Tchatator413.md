@@ -2,6 +2,8 @@
 
 Un protocole d'échange de tchatator, JSON-based.
 
+Version 1.1
+
 - [Fondamentaux](#fondamentaux)
   - [Requêtes](#requêtes)
   - [Réponses](#réponses)
@@ -10,20 +12,51 @@ Un protocole d'échange de tchatator, JSON-based.
   - [Professionnel](#professionnel)
   - [Administrateur](#administrateur)
 - [Erreurs communes](#erreurs-communes)
+- [Chaînes de connection](#chaînes-de-connection)
 - [Actions](#actions)
-  - [`login` : s'authentifier](#login--sauthentifier)
-  - [`logout` : se déconnecter](#logout--se-déconnecter)
   - [`whois` : rechercher un compte](#whois--rechercher-un-compte)
+    - [Réponse nominale](#réponse-nominale)
+    - [Erreurs](#erreurs)
   - [`send` : envoyer un message](#send--envoyer-un-message)
+    - [Réponse nominale](#réponse-nominale-1)
+    - [Erreurs](#erreurs-1)
+    - [Invariants](#invariants)
   - [`motd` : obtenir les messages reçus non lus](#motd--obtenir-les-messages-reçus-non-lus)
+    - [Réponse nominale](#réponse-nominale-2)
+    - [Erreurs](#erreurs-2)
+    - [Problèmes possibles](#problèmes-possibles)
   - [`inbox` : obtenir les messages reçus](#inbox--obtenir-les-messages-reçus)
+    - [Réponse nominale](#réponse-nominale-3)
+    - [Erreurs](#erreurs-3)
+    - [Problèmes possibles](#problèmes-possibles-1)
   - [`outbox` : obtenir les messages envoyés](#outbox--obtenir-les-messages-envoyés)
+    - [Réponse nominale](#réponse-nominale-4)
+    - [Erreurs](#erreurs-4)
+    - [Problèmes possibles](#problèmes-possibles-2)
   - [`edit` : modifier un message](#edit--modifier-un-message)
+    - [Réponse nominale](#réponse-nominale-5)
+    - [Erreurs](#erreurs-5)
+    - [Invariants](#invariants-1)
   - [`rm` : supprimer un message](#rm--supprimer-un-message)
+    - [Réponse nominale](#réponse-nominale-6)
+    - [Erreurs](#erreurs-6)
+    - [Invariants](#invariants-2)
   - [`block` : bloquer un client](#block--bloquer-un-client)
+    - [Réponse nominale](#réponse-nominale-7)
+    - [Erreurs](#erreurs-7)
+    - [Invariants](#invariants-3)
   - [`unblock`: débloquer un client](#unblock-débloquer-un-client)
+    - [Réponse nominale](#réponse-nominale-8)
+    - [Erreurs](#erreurs-8)
+    - [Invariants](#invariants-4)
   - [`ban` : bannir un client](#ban--bannir-un-client)
+    - [Réponse nominale](#réponse-nominale-9)
+    - [Erreurs](#erreurs-9)
+    - [Invariants](#invariants-5)
   - [`unban` : débannir un client](#unban--débannir-un-client)
+    - [Réponse nominale](#réponse-nominale-10)
+    - [Erreurs](#erreurs-10)
+    - [Invariants](#invariants-6)
 
 ## Fondamentaux
 
@@ -34,10 +67,9 @@ Le serveur reçoit une requête sous la forme d'une liste JSON:
 ```json
 [
   {
-    "do": "login",
+    "do": "whois",
     "with": {
-      "api_key": "...",
-      "password": "..."
+      "user": 1,
     }
   }
 ]
@@ -49,10 +81,9 @@ Une forme raccourcie est possible pour les requêtes comprenant une seule action
 
 ```json
 {
-  "do": "login",
+  "do": "whois",
   "with": {
-    "api_key": "...",
-    "password": "..."
+    "user": 1,
   }
 }
 ```
@@ -85,6 +116,12 @@ La propriété `has_next_page` indique que le résultat est paginé et que le pr
 
 ## Rôles
 
+Chaque utilisateur a un ID numérique. L'utilisateur d'ID `0` est spécial, c'est le super-utilisateur (root). Il est considéré comme administrateur et a un mot de passé défini dans la configuration du serveur.
+
+Traiter spécialement l'utilisateur d'ID `0` permet d'utiliser au serveur même si la base de données est indisponible ou cassée.
+
+Un utilisateur peut définir un mot de passe, mais ce n'est pas obligatoire. Si un mot de passe est fourni alors que aucun n'est attendu, c'est une erreur.
+
 ### Client
 
 Aussi appelé membre. Échange avec des professionnels.
@@ -95,7 +132,7 @@ Peut échanger avec des clients.
 
 ### Administrateur
 
-Le seul administrateur du système.
+Un administrateur. Peut tout faire.
 
 ## Erreurs communes
 
@@ -110,55 +147,13 @@ Unprocessable content|Invariant enfreint|`{ "status": 422, "reason": "nom de l'i
 Too many requests|Rate limit atteinte|`{ "status": 429, "next_request_at": integer }`
 Internal server error|Erreur non spécifiée|`{ status: 500 }`
 
+## Chaînes de connection
+
+Une chaîne de connection sert à authentifier un utilisateur formulant une requête au serveur.
+
+Elle se comporte d'une clé d'API, optionellement suivie d'un symbole monétaire `¤` et d'un mot de passe.
+
 ## Actions
-
-### `login` : s'authentifier
-
-**Rôles** : *tous*
-
-Argument|Type|Description
--|-|-
-`api_key`|UUID V4|Clé d'API
-`password`|string|Mot de passe
-
-Crée une session.
-
-Un même utilisateur peut avoir plusieurs sessions. La rate limit s'applique à l'utilisateur lui-même, et non pas indépendamment par session.
-
-#### Réponse nominale
-
-```json
-{ "token": 6554564 }
-```
-
-#### Erreurs
-
-Statut|Raison
--|-
-401|Clé d'API invalide
-403|Mot de passe incorrect
-
-### `logout` : se déconnecter
-
-**Rôles** : *tous*
-
-Argument|Type|Description
--|-|-
-`token`|integer|Token de session
-
-Supprime une session.
-
-#### Réponse nominale
-
-```json
-{}
-```
-
-#### Erreurs
-
-Statut|Raison
--|-
-401|c
 
 ### `whois` : rechercher un compte
 
@@ -166,7 +161,7 @@ Statut|Raison
 
 Argument|Type|Description
 -|-|-
-`api_key`|UUID V4|Clé d'API
+`constr`|Chaîne de connection|Votre chaîne de connection
 `user`|Clé de compte (ID, pseudo, e-mail)|Identifie l'utilisateur à rechercher
 
 Obtient les informations d'un compte à partir d'unee de ses clés candidates (ID, pseudo, e-mail).
@@ -198,7 +193,7 @@ Statut|Raison
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `dest`|Clé de compte (ID, pseudo, e-mail)|Identifie le compte destinataire
 content|string|contenu du message
 
@@ -214,7 +209,7 @@ Envoie un message.
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 403|utilisateur actuel bloqué ou banni
 404|Compte *dest* introuvable
 
@@ -232,7 +227,7 @@ Nom|Description
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 
 Obtient la liste des messages non lus, ordonnées par date d'envoi (plus ancien au plus récent).
 
@@ -265,7 +260,7 @@ Liste de messages
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 
 #### Problèmes possibles
 
@@ -278,7 +273,7 @@ Statut|Raison
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `page`|integer|Numéro de page (1-based). Optionnel (1 par défaut)
 
 Obtient l'historique des messages reçus, avec pagination.
@@ -316,7 +311,7 @@ Liste de messages
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 404|Numéro de page invalide
 
 #### Problèmes possibles
@@ -329,7 +324,7 @@ Statut|Raison
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `page`|integer|Numéro de page (1-based). Optionnel (1 par défaut)
 
 Obtient l'historique des messages envoyés, avec pagination.
@@ -367,7 +362,7 @@ Liste de messages
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 404|Numéro de page invalide
 
 #### Problèmes possibles
@@ -380,7 +375,7 @@ Statut|Raison
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `msg_id`|integer|ID du message à modifier
 `new_content`|string|Nouveau contenu du message
 
@@ -396,7 +391,7 @@ Modifie un message.
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 403|utilisateur actuel bloqué ou banni
 404|Message introuvable
 
@@ -412,7 +407,7 @@ Nom|Description
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `msg_id`|integer|ID du message à modifier
 
 Supprime un message.
@@ -427,7 +422,7 @@ Supprime un message.
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 404|Message introuvable
 
 #### Invariants
@@ -442,7 +437,7 @@ Nom|Description
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `user`|Clé de compte utilisateur (ID, pseudo, e-mail)|Identifie le client à bloquer (la cible)
 
 Bloque un client pendant une durée limitée.
@@ -461,7 +456,7 @@ Si l'utilisateur actuel est l'administrateur, empêche la cible d'envoyer ou de 
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 404|Utilisateur introuvable
 
 #### Invariants
@@ -477,7 +472,7 @@ Nom|Description
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `user`|Clé de compte utilisateur (ID, pseudo, e-mail)|Identifie le client à débloquer (la cible)
 
 Débloque un client avant l'expiration de son blocage.
@@ -492,7 +487,7 @@ Débloque un client avant l'expiration de son blocage.
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 404|Utilisateur introuvable
 
 #### Invariants
@@ -507,7 +502,7 @@ Nom|Description
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `user`|Clé de compte utilisateur (ID, pseudo, e-mail)|Identifie le client à bannir (la cible)
 
 Bannit un client.
@@ -526,7 +521,7 @@ Si l'utilisateur actuel est l'administrateur, empêche la cible d'envoyer ou de 
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 404|Utilisateur introuvable
 
 #### Invariants
@@ -542,7 +537,7 @@ Nom|Description
 
 Argument|Type|Description
 -|-|-
-`token`|integer|Token de session
+`constr`|Chaîne de connection|Votre chaîne de connection
 `user`|Clé de compte utilisateur (ID, pseudo, e-mail)|Identifie le client à débannir (la cible)
 
 Débannit un client.
@@ -557,7 +552,7 @@ Débannit un client.
 
 Statut|Raison
 -|-
-401|l'argument `token` est invalide
+401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 404|Utilisateur introuvable
 
 #### Invariants

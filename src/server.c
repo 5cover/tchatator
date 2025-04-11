@@ -38,7 +38,16 @@ int main(int argc, char **argv) {
     int verbosity = 0;
     bool dump_config = false, interactive = false;
 
-    cfg_t *cfg = NULL;
+    cfg_t *cfg = cfg_defaults();
+
+    {
+        api_key_t root_api_key;
+        if (!uuid4_parse(&root_api_key, require_env(cfg, "ROOT_API_KEY"))) {
+            cfg_log(cfg, log_error, "invalid ROOT_API_KEY\n");
+            return EX_USAGE;
+        }
+        cfg_load_root_credentials(cfg, root_api_key, require_env(cfg, "ROOT_PASSWORD"));
+    }
 
     // Arguments
     {
@@ -103,8 +112,7 @@ int main(int argc, char **argv) {
                     cfg_log(cfg, log_error, "config already specified by previous argument\n");
                     return EX_USAGE;
                 }
-                cfg = cfg_from_file(optarg);
-                if (!cfg) return EX_CONFIG;
+                cfg_load_from_file(cfg, optarg);
                 break;
             case '?':
                 puts(HELP);
@@ -112,8 +120,6 @@ int main(int argc, char **argv) {
             }
         }
     }
-
-    if (!cfg) cfg = cfg_defaults();
 
     int result;
 
@@ -130,20 +136,11 @@ int main(int argc, char **argv) {
             require_env(cfg, "DB_USER"),
             require_env(cfg, "DB_ROOT_PASSWORD"));
         if (!db) return EX_NODB;
-        
-        api_key_t admin_api_key;
-        if (!uuid4_parse(&admin_api_key, require_env(cfg, "ADMIN_API_KEY"))) {
-            cfg_log(cfg, log_error, "invalid ADMIN_API_KEY\n");
-            return EX_USAGE;
-        }
-
-        server_t *server = server_create(admin_api_key, require_env(cfg, "ADMIN_PASSWORD"));
 
         result = interactive
-            ? tchatator413_run_interactive(cfg, db, server, argc, argv)
-            : tchatator413_run_socket(cfg, db, server);
+            ? tchatator413_run_interactive(cfg, db, argc, argv)
+            : tchatator413_run_socket(cfg, db);
 
-        server_destroy(server);
         db_destroy(db);
     }
 

@@ -1,7 +1,7 @@
 {
   "do": "rm",
   "with": {
-    "token": %ld,
+    "constr": "%s",
     "msg_id": %d
     },
   }

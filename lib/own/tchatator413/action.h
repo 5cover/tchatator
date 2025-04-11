@@ -13,7 +13,6 @@
 #include "const.h"
 #include "cfg.h"
 #include "db.h"
-#include "server.h"
 #include "types.h"
 
 /// @brief Status codes for the Tchatator413 protocol, modeled after HTTP status codes.
@@ -102,36 +101,32 @@ typedef struct {
     union {
         action_error_t error;
         struct {
-            api_key_t api_key;
-            slice_t password;
-        } login;
+            constr_t constr;
+        } motd;
         struct {
-            token_t token;
-        } logout, motd;
-        struct {
-            api_key_t api_key;
+            constr_t constr;
             serial_t user_id;
         } whois;
         struct {
-            token_t token;
+            constr_t constr;
             serial_t dest_user_id;
             slice_t content;
         } send;
         struct {
-            token_t token;
+            constr_t constr;
             page_number_t page;
         } inbox, outbox;
         struct {
-            token_t token;
+            constr_t constr;
             serial_t msg_id;
             slice_t new_content;
         } edit;
         struct {
-            token_t token;
+            constr_t constr;
             serial_t msg_id;
         } rm;
         struct {
-            token_t token;
+            constr_t constr;
             serial_t user_id;
         } block, unblock, ban, unban;
     } with;
@@ -142,9 +137,6 @@ typedef struct {
     bool has_next_page;
     union {
         action_error_t error;
-        struct {
-            token_t token;
-        } login;
         struct {
             user_t user;
         } whois;
@@ -198,9 +190,8 @@ action_t action_parse(cfg_t *cfg, db_t *db, json_object *obj);
 /// @param action The action to evaluate.
 /// @param cfg The configuration.
 /// @param db The database connection.
-/// @param server The server
 /// @return The response to the action.
-response_t action_evaluate(action_t const *action, cfg_t *cfg, db_t *db, server_t *server);
+response_t action_evaluate(action_t const *action, cfg_t *cfg, db_t *db);
 
 /// @brief Convert an action response to JSON.
 /// @param response The action response.

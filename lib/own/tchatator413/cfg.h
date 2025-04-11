@@ -6,6 +6,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include "tchatator413/types.h"
+#include "tchatator413/uuid.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -15,18 +17,22 @@ typedef struct cfg cfg_t;
 
 /// @brief Load the default configuration.
 /// @return A new configuration object.
-///
 /// The default verbosity is 0.
 cfg_t *cfg_defaults(void);
+
+/// @brief Adds root credetials to the config
+/// @param root_api_key The root API Key.
+/// @param root_password The root password.
+void cfg_load_root_credentials(cfg_t *cfg, uuid4_t root_api_key, const char *root_password);
 
 /// @brief Destroy a configuration.
 /// @param cfg The configuration to destroy. No-op if @c NULL.
 void cfg_destroy(cfg_t *cfg);
 
-/// @brief Load configuration from a file.
-/// @param filename The filename to read the config from.
-/// @return A new configuration object.
-cfg_t *cfg_from_file(char const *filename);
+/// @brief Fills a configuration from a config file.
+/// @param cfg The configuration to fill.
+/// @param filename The filename to read config from.
+void cfg_load_from_file(cfg_t *cfg, char const *filename);
 
 /// @brief Dump a configuration to standard output.
 /// @param cfg The configuration to dump.
@@ -94,5 +100,9 @@ int cfg_backlog(cfg_t const *cfg);
 /// @param cfg Configuration
 /// @return the configuration port.
 uint16_t cfg_port(cfg_t const *cfg);
+/// @brief Verifies the root constr.
+/// @param cfg Configuration
+/// @return If the root constr matches.
+bool cfg_verify_root_constr(cfg_t const *cfg, constr_t constr);
 
 #endif // CONFIG_H

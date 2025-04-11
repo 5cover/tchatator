@@ -13,11 +13,11 @@
 #include <tchatator413/db.h>
 #include <tchatator413/util.h>
 
-#define TBL_USER "tchatator.user"
-#define TBL__MSG "tchatator._msg"
-#define TBL_INBOX "tchatator.inbox"
-#define TBL_MEMBRE "pact.membre"
-#define TBL_PRO "pact.professionnel"
+#define TBL_USER "user"
+#define TBL__MSG "_msg"
+#define TBL_INBOX "inbox"
+#define TBL_MEMBER "member"
+#define TBL_PRO "professionnal"
 #define CALL_FUN_SEND_MSG(arg1, arg2, arg3) "tchatator.send_msg(" arg1 "::int," arg2 "::int," arg3 "::varchar)"
 
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -51,7 +51,7 @@ static inline int user_kind_to_role(user_kind_t kind) {
     _Static_assert((int)errstatus_error < min_role || (int)errstatus_error > max_role,
         "role_flags_t must not have errstatus_handled in order to avoid return value ambiguity");
     switch (kind) {
-    case user_kind_member: return role_membre;
+    case user_kind_member: return role_member;
     case user_kind_pro_prive: [[fallthrough]];
     case user_kind_pro_public: return role_pro;
     default:
@@ -67,16 +67,15 @@ db_t *db_connect(cfg_t *cfg, int verbosity, char const *host, char const *port, 
         database,
         username,
         password);
-    PGVerbosity v;
-    if (verbosity <= -2)
-        v = PQERRORS_SQLSTATE;
-    else if (verbosity == -1)
-        v = PQERRORS_TERSE;
-    else if (verbosity == 0)
-        v = PQERRORS_DEFAULT;
-    else // verbosity >= 1
-        v = PQERRORS_VERBOSE;
-    PQsetErrorVerbosity(db, v);
+    PQsetErrorVerbosity(db,
+        verbosity <= -2
+            ? PQERRORS_SQLSTATE
+            : verbosity == -1
+            ? PQERRORS_TERSE
+            : verbosity == 0
+            ? PQERRORS_DEFAULT
+            // verbosity >= 1
+            : PQERRORS_VERBOSE);
 
     if (PQstatus(db) != CONNECTION_OK) {
         cfg_log(cfg, log_error, log_fmt_pq(db));
@@ -97,11 +96,27 @@ void db_collect(void *memory_owner) {
     PQclear(memory_owner);
 }
 
-errstatus_t db_verify_user_api_key(db_t *db, cfg_t *cfg, user_identity_t *out_user, api_key_t api_key) {
+static inline bool check_password(char const *password, char const *hash) {
+    if (!password && !hash) return true;
+    if (!password || !hash) return false;
+    switch (bcrypt_checkpw(password, hash)) {
+    case -1: errno_exit("bcrypt_checkpw");
+    case 0: return true;
+    default: return false;
+    }
+}
+
+errstatus_t db_verify_user_constr(db_t *db, cfg_t *cfg, user_identity_t *out_user, constr_t constr) {
+    if (cfg_verify_root_constr(cfg, constr)) {
+        out_user->role = role_admin;
+        out_user->id = 0;
+        return errstatus_ok;
+    }
+
     char api_key_repr[UUID4_REPR_LENGTH + 1];
-    uuid4_repr(api_key, api_key_repr)[UUID4_REPR_LENGTH] = '\0';
+    uuid4_repr(constr.api_key, api_key_repr)[UUID4_REPR_LENGTH] = '\0';
     char const *arg1 = api_key_repr;
-    PGresult *result = PQexecParams(db, "select kind, user_id from " TBL_USER " where api_key = $1",
+    PGresult *result = PQexecParams(db, "select kind, user_id, password_hash from " TBL_USER " where api_key = $1",
         1, NULL, &arg1, NULL, NULL, 1);
 
     errstatus_t res;
@@ -116,9 +131,11 @@ errstatus_t db_verify_user_api_key(db_t *db, cfg_t *cfg, user_identity_t *out_us
             cfg_log(cfg, log_error, "database: incorrect user kind recieved: %d\n", role);
             res = errstatus_handled;
         } else {
-            res = errstatus_ok;
-            out_user->role = (role_flags_t)role;
-            out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 1));
+            res = check_password(constr.password, PQgetvalue(result, 0, 0));
+            if (res) {
+                out_user->role = (role_flags_t)role;
+                out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 1));
+            }
         }
     }
 
@@ -170,7 +187,7 @@ serial_t db_get_user_id_by_email(db_t *db, cfg_t *cfg, const char *email) {
 
 serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
     // First search by member pseudo since they are unique
-    PGresult *result = PQexecParams(db, "select id from " TBL_MEMBRE " where pseudo=$1",
+    PGresult *result = PQexecParams(db, "select id from " TBL_MEMBER " where pseudo=$1",
         1, NULL, &name, NULL, NULL, 1);
 
     serial_t res;
@@ -224,37 +241,6 @@ errstatus_t db_get_user(db_t *db, cfg_t *cfg, user_t *user) {
         user->display_name = PQgetvalue(result, 0, 4);
         user->memory_owner_db = result;
         return errstatus_ok;
-    }
-
-    PQclear(result);
-    return res;
-}
-
-static inline bool check_password(char const *password, char const *hash) {
-    switch (bcrypt_checkpw(password, hash)) {
-    case -1: errno_exit("bcrypt_checkpw");
-    case 0: return true;
-    default: return false;
-    }
-}
-
-errstatus_t db_check_password(db_t *db, cfg_t *cfg, serial_t user_id, char const *password) {
-    uint32_t const arg1 = pq_send_l(user_id);
-    char const *const args[] = { (char const *)&arg1 };
-    int const args_len[array_len(args)] = { sizeof arg1 };
-    int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "select mdp_hash from " TBL_USER " where user_id=$1",
-        array_len(args), NULL, args, args_len, args_fmt, 1);
-
-    errstatus_t res;
-
-    if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        cfg_log(cfg, log_error, log_fmt_pq_result(result));
-        res = errstatus_handled;
-    } else if (PQntuples(result) == 0) {
-        res = errstatus_error;
-    } else {
-        res = check_password(password, PQgetvalue(result, 0, 0));
     }
 
     PQclear(result);
@@ -408,11 +394,11 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ct
         res = errstatus_handled;
     } else {
         PQclear(result);
-        
+
         // We begun the transaction.
-        
+
         res = body(db, cfg, ctx);
-        
+
         // End the transaction now.
         result = PQexec(db, res == errstatus_ok ? "commit" : "rollback");
 
@@ -421,7 +407,7 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ct
             res = errstatus_handled;
         }
     }
-    
+
     PQclear(result);
 
     return res;

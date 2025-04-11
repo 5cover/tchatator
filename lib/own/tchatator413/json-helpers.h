@@ -7,6 +7,7 @@
 #define JSON_HELPERS
 
 #include "slice.h"
+#include "util.h"
 #include <json-c.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -19,7 +20,7 @@
 
 /// @brief A format string and arguments for a json-c error.
 // json_util_get_last_err includes a \n
-#define LOG_FMT_JSON_C(fmt, ...) "json-c: " fmt ": %s" __VA_OPT__(, ) __VA_ARGS__, json_util_get_last_err()
+#define LOG_FMT_JSON_C(fmt, ...) "json-c: " fmt ": %s" __VA_OPT__(, ) __VA_ARGS__, COALESCE(json_util_get_last_err(), "(null)\n")
 
 /// @brief A format string and arguments for a JSON type error.
 #define LOG_FMT_JSON_TYPE(type, actual, fmt, ...) "json: " fmt ": type: expected %s, got %s\n" __VA_OPT__(, ) __VA_ARGS__, json_type_to_name(type), json_type_to_name(actual)

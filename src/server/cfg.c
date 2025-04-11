@@ -3,13 +3,15 @@
 /// @brief Tchatator413 server configuration - Implementation
 /// @date 29/01/2025
 
+#include "tchatator413/cfg.h"
+#include "tchatator413/json-helpers.h"
+#include "tchatator413/util.h"
+#include "tchatator413/uuid.h"
+#include <bcrypt/bcrypt.h>
 #include <errno.h>
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
-#include <tchatator413/cfg.h>
-#include <tchatator413/json-helpers.h>
-#include <tchatator413/util.h>
 #include <time.h>
 
 #define STD_LOG_STREAM stderr
@@ -24,11 +26,10 @@ struct cfg {
     int block_for;
     int backlog;
     uint16_t port;
-
-    /// @remark Can be @c NULL if log_file is a standard stream.
-    char *log_file_name;
-
+    char *log_file_name; ///< @remark Can be @c NULL if log_file is a standard stream.
     int verbosity;
+    uuid4_t root_api_key;
+    char root_password_hash[BCRYPT_HASHSIZE];
 };
 
 #define INTRO "config: "
@@ -89,6 +90,13 @@ cfg_t *cfg_defaults(void) {
     return cfg;
 }
 
+void cfg_load_root_credentials(cfg_t *cfg, uuid4_t root_api_key, const char *root_password) {
+    cfg->root_api_key = root_api_key;
+    char salt[BCRYPT_HASHSIZE];
+    if (0 != bcrypt_gensalt(12, salt)) errno_exit("bcrypt_gensalt");
+    if (0 != bcrypt_hashpw(root_password, salt, cfg->root_password_hash)) errno_exit("bcrypt_hashpw");
+}
+
 void cfg_destroy(cfg_t *cfg) {
     if (!cfg) return;
     if (cfg->log_file && cfg->log_file != STD_LOG_STREAM) fclose(cfg->log_file);
@@ -100,15 +108,12 @@ void cfg_set_verbosity(cfg_t *cfg, int verbosity) {
     cfg->verbosity = verbosity;
 }
 
-cfg_t *cfg_from_file(char const *filename) {
+void cfg_load_from_file(cfg_t *cfg, char const *filename) {
     json_object *obj_cfg = json_object_from_file(filename), *obj;
-
-    cfg_t *cfg = cfg_defaults();
 
     if (!obj_cfg) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_C("failed to parse config file at '%s'", filename));
         log(STD_LOG_STREAM, log_info, INTRO "using defaults\n");
-        return cfg;
     }
 
     if (json_object_object_get_ex(obj_cfg, "log_file", &obj)) {
@@ -154,8 +159,6 @@ cfg_t *cfg_from_file(char const *filename) {
     }
 
     json_object_put(obj_cfg);
-
-    return cfg;
 }
 
 void cfg_dump(cfg_t const *cfg) {
@@ -169,7 +172,7 @@ void cfg_dump(cfg_t const *cfg) {
     printf("port            %hd\n", cfg->port);
     printf("rate_limit_h    %d\n", cfg->rate_limit_h);
     printf("rate_limit_m    %d\n\n", cfg->rate_limit_m);
-    
+
     printf("log verbosity   %d\n", cfg->verbosity);
 }
 
@@ -185,6 +188,15 @@ bool _cfg_log(char const *file, int line, cfg_t *cfg, log_lvl_t lvl, char const 
 
 void cfg_log_putc(cfg_t *cfg, char c) {
     putc(c, open_log_file(cfg));
+}
+
+bool cfg_verify_root_constr(cfg_t const *cfg, constr_t constr) {
+    if (!uuid4_eq(cfg->root_api_key, constr.api_key)) return false;
+    switch (bcrypt_checkpw(constr.password, cfg->root_password_hash)) {
+    case -1: errno_exit("bcrypt_checkpw");
+    case 0: return true;
+    default: return false;
+    }
 }
 
 #define DEFINE_CONFIG_GETTER(type, attr) \

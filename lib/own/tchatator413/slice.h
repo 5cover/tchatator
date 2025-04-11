@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 
-/// @brief A memory slice.
+/// @brief A read-only memory slice.
 typedef struct {
     size_t len;
     /// @remark Make sure to check the length before using this pointer.

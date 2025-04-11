@@ -56,11 +56,11 @@ void db_collect(void *memory_owner);
 /// @param db The database.
 /// @param cfg The configuration.
 /// @param out_user Assigned to the identity of the user.
-/// @param api_key The API key to verify.
+/// @param const The connection string to verify.
 /// @return @ref errstatus_handled A database error occured. A message has been shown. @p out_user is untouched.
 /// @return @ref errstatus_error The API key isn't valid. @p out_user is untouched.
 /// @return @ref errstatus_ok The API key is valid.
-errstatus_t db_verify_user_api_key(db_t *db, cfg_t *cfg, user_identity_t *out_user, api_key_t api_key);
+errstatus_t db_verify_user_constr(db_t *db, cfg_t *cfg, user_identity_t *out_user, constr_t constr);
 
 /// @brief Get the ID of an user from their e-mail.
 /// @param db The database.

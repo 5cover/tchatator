@@ -83,6 +83,23 @@ action_t action_parse(cfg_t *cfg, db_t *db, json_object *obj) {
 #define getarg_string(obj, key, out_value) getarg(obj, key, out_value, json_type_string, json_object_get_string_strict)
 #define getarg_int(obj, key, out_value) getarg(obj, key, out_value, json_type_int, json_object_get_int_strict)
 #define getarg_int64(obj, key, out_value) getarg(obj, key, out_value, json_type_int, json_object_get_int64_strict)
+#define DELIMITER "¤"
+#define getarg_constr(obj, key, out_value)                                          \
+    do {                                                                            \
+        if (!json_object_object_get_ex(obj_with, key, &obj)) {                      \
+            fail_missing_key(arg_loc(key));                                         \
+        }                                                                           \
+        slice_t constr;                                                             \
+        if (!json_object_get_string_strict(obj, &constr)) {                         \
+            fail_type(arg_loc(key), obj, json_type_string);                         \
+        }                                                                           \
+        if (!uuid4_parse_slice(&(out_value)->api_key, constr)) {                    \
+            fail_invalid(arg_loc(key), obj, "invalid API key");                     \
+        }                                                                           \
+        (out_value)->password = strstr(constr.val, DELIMITER);                      \
+        if (!(out_value)->password) (out_value)->password += sizeof(DELIMITER) - 1; \
+    } while (0)
+
 #define getarg_user(obj, key, out_value)                                           \
     do {                                                                           \
         if (!json_object_object_get_ex(obj_with, key, &obj)) {                     \
@@ -105,7 +122,7 @@ action_t action_parse(cfg_t *cfg, db_t *db, json_object *obj) {
             *out_value = 1;                                             \
         }                                                               \
     } while (0)
-#define getarg_api_key(obj, get, out_value)                              \
+#define getarg_api_key(obj, get)                                         \
     do {                                                                 \
         slice_t api_key_repr;                                            \
         getarg_string(obj, "api_key", &api_key_repr);                    \
@@ -128,158 +145,93 @@ action_t action_parse(cfg_t *cfg, db_t *db, json_object *obj) {
 // this is save because the null terminator of the literal string STR(name) will stop strcmp
 #define action_is(name) streq(STR(name), action_name.val)
 
-#define DO login
+#define DO whois
     if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // api_key
-        json_object *obj_api_key;
-        getarg_api_key(obj_api_key, "api_key", &action.with.DO.api_key);
-
-        // password
-        json_object *obj_password;
-        getarg_string(obj_password, "password", &action.with.DO.password);
-#undef DO
-#define DO logout
-    } else if (action_is(DO)) {
-        action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-#undef DO
-#define DO whois
-    } else if (action_is(DO)) {
-        action.type = ACTION_TYPE(DO);
-
-        // api_key
-        json_object *obj_api_key;
-        getarg_api_key(obj_api_key, "api_key", &action.with.DO.api_key);
-
-        // user
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_user;
         getarg_user(obj_user, "user", &action.with.DO.user_id);
 #undef DO
 #define DO send
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // content
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_content;
         getarg_string(obj_content, "content", &action.with.DO.content);
-
-        // dest
         json_object *obj_dest;
         getarg_user(obj_dest, "dest", &action.with.DO.dest_user_id);
 #undef DO
 #define DO motd
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
 #undef DO
 #define DO inbox
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // page
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_page;
         getarg_page(obj_page, "page", &action.with.DO.page);
 #undef DO
 #define DO outbox
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // page
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_page;
         getarg_page(obj_page, "page", &action.with.DO.page);
 #undef DO
 #define DO edit
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // msg_id
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_msg_id;
         getarg_int(obj_msg_id, "msg_id", &action.with.DO.msg_id);
-
-        // new_content
         json_object *obj_new_content;
         getarg_string(obj_new_content, "new_content", &action.with.DO.new_content);
 #undef DO
 #define DO rm
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // msg_id
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_msg_id;
         getarg_int(obj_msg_id, "msg_id", &action.with.DO.msg_id);
 #undef DO
 #define DO block
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // user
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_user;
         getarg_user(obj_user, "user", &action.with.DO.user_id);
 #undef DO
 #define DO unblock
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // user
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_user;
         getarg_user(obj_user, "user", &action.with.DO.user_id);
 #undef DO
 #define DO ban
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // user
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_user;
         getarg_user(obj_user, "user", &action.with.DO.user_id);
 #undef DO
 #define DO unban
     } else if (action_is(DO)) {
         action.type = ACTION_TYPE(DO);
-        // token
-        json_object *obj_token;
-        getarg_int64(obj_token, "token", &action.with.DO.token);
-
-        // user
+        json_object *obj_constr;
+        getarg_constr(obj_constr, "constr", &action.with.DO.constr);
         json_object *obj_user;
         getarg_user(obj_user, "user", &action.with.DO.user_id);
     } else {
@@ -361,13 +313,6 @@ json_object *response_to_json(response_t *response) {
         add_key(obj_error, "status", json_object_new_int(status));
         break;
     }
-    case action_type_login:
-        obj_body = json_object_new_object();
-        add_key(obj_body, "token", json_object_new_int64(response->body.login.token));
-        break;
-    case action_type_logout:
-
-        break;
     case action_type_whois:
         obj_body = json_object_new_object();
         add_key(obj_body, "user_id", json_object_new_int(response->body.whois.user.id));

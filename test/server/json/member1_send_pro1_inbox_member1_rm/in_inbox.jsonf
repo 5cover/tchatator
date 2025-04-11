@@ -1,6 +1,6 @@
 {
   "do": "inbox",
   "with": {
-    "token": %ld
+    "constr": %s
   }
 }

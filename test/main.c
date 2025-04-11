@@ -3,8 +3,8 @@
 /// @brief Tchatator413 test utilities - Implementation
 /// @date 1/02/2025
 
-#include "tchatator413/const.h"
 #include "server/tests.h"
+#include "tchatator413/const.h"
 #include <stdlib.h>
 #include <tchatator413/cfg.h>
 #include <tchatator413/db.h>
@@ -22,10 +22,9 @@ int main(void) {
     struct test t;
     bool success = true;
     cfg_t *cfg = cfg_defaults();
+    cfg_load_root_credentials(cfg, API_KEY_TEST_ROOT_UUID, PASSOWRD_TEST_ROOT);
     db_t *db = db_connect(cfg, 0, DB_HOST, PGDB_PORT, DB_NAME, DB_USER, DB_ROOT_PASSWORD);
     if (!db) return EX_NODB;
-
-    server_t *server = server_create(API_KEY_TEST_ADMIN_UUID, API_KEY_TEST_ADMIN_PASSWORD);
 
 #define test(new_test)                \
     do {                              \
@@ -35,7 +34,7 @@ int main(void) {
 
     test(test_uuid4());
 
-#define CALL_TEST(name) test(test_tchatator413_##name(cfg, db, server));
+#define CALL_TEST(name) test(test_tchatator413_##name(cfg, db));
     X_TESTS(CALL_TEST)
 #undef CALL_TEST
 
@@ -45,7 +44,6 @@ int main(void) {
 
     cfg_destroy(cfg);
     db_destroy(db);
-    server_destroy(server);
 
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

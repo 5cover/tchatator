@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <tchatator413/util.h>
+#include <sysexits.h>
 
 char *strfmt(const char *fmt, ...) {
     va_list ap;

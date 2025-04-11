@@ -16,8 +16,6 @@ enum {
 
 /// @brief X-macro that expands to the list of actions
 #define X_ACTIONS(X) \
-    X(login)         \
-    X(logout)        \
     X(whois)         \
     X(send)          \
     X(motd)          \
@@ -62,8 +60,8 @@ REQUIRED ENVIRONMENT VARIABLES\n\
     DB_NAME            DB name\n\
     DB_USER            DB username\n\
     DB_ROOT_PASSWORD   DB password\n\
-    ADMIN_API_KEY      Administrator API key\n\
-    ADMIN_PASSWORD     Administrator password"
+    ROOT_API_KEY       Root API key\n\
+    ROOT_PASSWORD      Root password"
 
 /// @brief The program's versionstring.
 #define VERSION PROG " 1.0.1"
