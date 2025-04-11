@@ -81,15 +81,6 @@ X_TESTS(DECLARE_TEST)
 
 // Implementation details
 
-#include <stddef.h>
-
-/// @brief Test admin API key representation.
-#define API_KEY_TEST_ROOT "63291606-ac93-41f7-b248-f0cd25adb61f"
-/// @brief Test admin API key UUID.
-#define API_KEY_TEST_ROOT_UUID uuid4_of(0x63, 0x29, 0x16, 0x06, 0xac, 0x93, 0x41, 0xf7, 0xb2, 0x48, 0xf0, 0xcd, 0x25, 0xad, 0xb6, 0x1f)
-/// @brief Test admin password.
-#define PASSOWRD_TEST_ROOT "theendisnevertheendisnevertheendisnevertheend"
-
 // exist in the test DB
 /// @brief Member 1 API key representation.
 #define API_KEY_MEMBER1 "123e4567-e89b-12d3-a456-426614174000"

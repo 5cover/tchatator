@@ -9,19 +9,19 @@ create table _user (
 );
 
 create table _member (
-    user_id serial primary key references _user on delete cascade;
-    user_name varchar not null;
-    full_block_expires_at timestamp;
-)
+    user_id serial primary key references _user on delete cascade,
+    user_name varchar not null,
+    full_block_expires_at timestamp
+);
 
 create table _professionnal (
-    user_id serial primary key references _user on delete cascade;
-    business_name varchar not null;
-)
+    user_id serial primary key references _user on delete cascade,
+    business_name varchar not null
+);
 
 create table _administrator (
-    user_id serial primary key references _user on delete cascade;
-)
+    user_id serial primary key references _user on delete cascade
+);
 
 -- todo: use _user instead of pact
 
@@ -41,22 +41,22 @@ create table _msg (
     constraint deleted_gt_modified check (deleted_age > edited_age),
 
     -- null fk for root (0)
-    id_compte_sender int
-        constraint message_fk_compte_sender references _user on delete cascade,
-    id_compte_recipient int
-        constraint message_fk_compte_recipient references _user on delete cascade,
+    user_id_sender int
+        constraint message_fk_user_sender references _user on delete cascade,
+    user_id_recipient int
+        constraint message_fk_user_recipient references _user on delete cascade,
 
-    constraint sender_ne_recipient check (id_compte_sender <> id_compte_recipient)
+    constraint sender_ne_recipient check (user_id_sender <> user_id_recipient)
 );
 
 -- ASSOCIATIONS
 
 create table _single_block (
-    id_member int not null
+    user_id_member int not null
         constraint single_block_fk_member references _member on delete cascade,
-    id_professionnal int not null
+    user_id_professionnal int not null
         constraint single_block_fk_professionnal references _professionnal on delete cascade,
-    constraint single_block_pk primary key (id_member, id_professionnal),
+    constraint single_block_pk primary key (user_id_member, user_id_professionnal),
 
     expires_at timestamp not null default 'infinity'
 );

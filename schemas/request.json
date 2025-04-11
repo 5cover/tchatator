@@ -33,7 +33,7 @@
           "required": ["do", "with"]
         },
         {
-          "description": "rechercher un compte",
+          "description": "rechercher un utilisateur",
           "properties": {
             "do": {"const": "whois"},
             "with": {
@@ -171,9 +171,9 @@
     },
     "token": {"type": "integer", "minimum": -9223372036854775808, "maximum": 9223372036854775807, "title": "Token de session"},
     "user_key": {
-      "title": "Clé de compte (ID, pseudo, e-mail)",
+      "title": "Clé de utilisateur (ID, pseudo, e-mail)",
       "oneOf": [
-        {"type": "integer", "title": "ID de compte"    , "minimum": 1, "maximum": 2147483647},
+        {"type": "integer", "title": "ID de utilisateur"    , "minimum": 1, "maximum": 2147483647},
         {"type": "string" , "title": "Pseudo ou e-mail"                                     }
       ]
     },

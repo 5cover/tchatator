@@ -8,8 +8,8 @@ select
     sent_at,
     read_age,
     edited_age,
-    id_compte_sender,
-    id_compte_recipient
+    user_id_sender,
+    user_id_recipient
 from
     _msg;
 
@@ -23,7 +23,8 @@ order by
     sent_at;
 
 create view
-    user as
+    "user" as
 select
     *
-from _user;
+from
+    _user;

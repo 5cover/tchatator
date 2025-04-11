@@ -56,10 +56,10 @@ DESCRIPTION\n\
 \n\
 REQUIRED ENVIRONMENT VARIABLES\n\
     DB_HOST            DB host\n\
-    PGDB_PORT          DB port\n\
+    DB_PORT          DB port\n\
     DB_NAME            DB name\n\
     DB_USER            DB username\n\
-    DB_ROOT_PASSWORD   DB password\n\
+    DB_PASSWORD   DB password\n\
     ROOT_API_KEY       Root API key\n\
     ROOT_PASSWORD      Root password"
 

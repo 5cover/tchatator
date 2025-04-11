@@ -9,15 +9,23 @@ Dependencies:
 - libpq-dev
 - libbcrypt (vendored)
 
+Rename the env file and fill placeholder values
+
+```bash
+cp env .env
+# edit .env...
+```
+
 Build and run:
 
 ```bash
-make
+make # build the client and the server
 ./bin/tchatator413
 ```
 
 Run tests:
 
 ```bash
-make bin/test
+make test
+bin/test
 ```

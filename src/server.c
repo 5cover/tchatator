@@ -25,15 +25,6 @@ nc 127.0.0.1 4113 <<< '[]'
 
 */
 
-static inline char const *require_env(cfg_t *cfg, char const *name) {
-    char *value = getenv(name);
-    if (!value) {
-        cfg_log(cfg, log_error, "envvar missing: %s\n", name);
-        exit(EX_USAGE);
-    }
-    return value;
-}
-
 int main(int argc, char **argv) {
     int verbosity = 0;
     bool dump_config = false, interactive = false;
@@ -131,10 +122,10 @@ int main(int argc, char **argv) {
     } else {
         db_t *db = db_connect(cfg, verbosity,
             require_env(cfg, "DB_HOST"),
-            require_env(cfg, "PGDB_PORT"),
+            require_env(cfg, "DB_PORT"),
             require_env(cfg, "DB_NAME"),
             require_env(cfg, "DB_USER"),
-            require_env(cfg, "DB_ROOT_PASSWORD"));
+            require_env(cfg, "DB_PASSWORD"));
         if (!db) return EX_NODB;
 
         result = interactive

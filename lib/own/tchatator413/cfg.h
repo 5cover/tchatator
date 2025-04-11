@@ -15,6 +15,13 @@
 /// @brief An opaque handle to a configuration object.
 typedef struct cfg cfg_t;
 
+/// Retrieves a required environment variable, logging an error and exiting if not found.
+/// @param cfg Configuration context for logging.
+/// @param name Name of the environment variable to retrieve.
+/// @return The value of the environment variable.
+/// @note Terminates the program with EX_USAGE if the environment variable is not set.
+char const *require_env(cfg_t *cfg, char const *name);
+
 /// @brief Load the default configuration.
 /// @return A new configuration object.
 /// The default verbosity is 0.

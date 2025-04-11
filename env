@@ -1,0 +1,8 @@
+# Example env file with placeholder values. Rename to .env to avoid comitting sensitive data.
+ROOT_API_KEY=root_api_key
+ROOT_PASSWORD=root_password
+DB_USER=db_user
+DB_NAME=db_name
+DB_PASSWORD=db_password
+DB_HOST=db_host
+DB_PORT=5432

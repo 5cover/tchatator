@@ -26,39 +26,73 @@ else
     CFLAGS += $(CFLAGS_RELEASE)
 endif
 
-# === Helpers ===
+# Helpers 
 rwildcard = $(foreach d,$(wildcard $(1)/*),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
-SRC_COMMON := $(call rwildcard,src/common,*.c)
-SRC_CLIENT := $(call rwildcard,src/client,*.c)
-SRC_SERVER := $(call rwildcard,src/server,*.c)
-SRC_TEST := $(call rwildcard,test,*.c)
-SRC_LIB := $(call rwildcard,lib,*.c)
+# Files and directories
+src_common := $(call rwildcard,src/common,*.c)
+src_client := $(call rwildcard,src/client,*.c)
+src_server := $(call rwildcard,src/server,*.c)
+src_test := $(call rwildcard,test,*.c)
+src_lib := $(call rwildcard,lib,*.c)
 
-BIN_DIR := bin
-BIN_CLIENT := $(BIN_DIR)/tchatator
-BIN_SERVER := $(BIN_DIR)/tchatator-server
-BIN_TEST := $(BIN_DIR)/test
+sql_dir := src/server/sql
+src_sql := $(addprefix $(sql_dir)/, schema.sql tables.sql functions.sql views.sql test_data.sql)
+src_sql_test := $(addprefix $(sql_dir)/, schema.sql tables.sql functions.sql views.sql data.sql)
 
-# === Targets ===
-.PHONY: all client server clean
+bin_dir := bin
+bin_client := $(bin_dir)/tchatator
+bin_server := $(bin_dir)/tchatator-server
+bin_test := $(bin_dir)/test
+
+# Targets 
+
+.PHONY: all client server test testdb db clean
 
 # to call docker-gcc (currently unused)
 # ./docker-gcc -o $@ -c '$(CFLAGS)' -l '$(LFLAGS)' $^
 
-all: $(BIN_CLIENT) $(BIN_SERVER)
+all: $(bin_client) $(bin_server)
 
 clean:
-	rm $(BIN_DIR)/*
+	rm $(bin_dir)/*
 
-$(BIN_CLIENT): src/client.c $(SRC_CLIENT) $(SRC_COMMON) $(SRC_LIB)
-	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS_CLIENT)
+client: src/client.c $(src_client) $(src_common) $(src_lib)
+	mkdir -p $(bin_dir)
+	$(CC) $(CFLAGS) -o $(bin_client) $^ $(LFLAGS_CLIENT)
 
-$(BIN_SERVER): src/server.c $(SRC_SERVER) $(SRC_COMMON) $(SRC_LIB)
-	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS_SERVER)
+server: src/server.c $(src_server) $(src_common) $(src_lib)
+	mkdir -p $(bin_dir)
+	$(CC) $(CFLAGS) -o $(bin_server) $^ $(LFLAGS_SERVER)
 
-$(BIN_TEST): $(SRC_TEST) $(SRC_SERVER) $(SRC_COMMON) $(SRC_LIB)
-	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS_SERVER) -lm
+test: $(src_test) $(src_server) $(src_common) $(src_lib)
+	mkdir -p $(bin_dir)
+	$(CC) $(CFLAGS) -o $(bin_test) $^ $(LFLAGS_SERVER) -lm
+
+testdb: SHELL:=/bin/bash
+testdb: $(src_sql_test)
+	@set -ea; . test.env; set +a; \
+	echo "Creating database: $$DB_NAME"; \
+	PGPASSWORD="$$DB_PASSWORD" createdb -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" "$$DB_NAME"; \
+	echo "Preparing SQL file list..."; \
+	sql_args=(); \
+	for file in $^; do \
+		echo "  > $$file"; \
+		sql_args+=("-f" "$$file"); \
+	done; \
+	echo "Executing psql..."; \
+	PGPASSWORD="$$DB_PASSWORD" psql -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" -d "$$DB_NAME" -v ON_ERROR_STOP=on "$${sql_args[@]}"
+
+db: SHELL:=/bin/bash
+db: $(src_sql)
+	@set -ea; . .env; set +a; \
+	echo "Creating database: $$DB_NAME"; \
+	PGPASSWORD="$$DB_PASSWORD" createdb -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" "$$DB_NAME"; \
+	echo "Preparing SQL file list..."; \
+	sql_args=(); \
+	for file in $^; do \
+		echo "  > $$file"; \
+		sql_args+=("-f" "$$file"); \
+	done; \
+	echo "Executing psql..."; \
+	PGPASSWORD="$$DB_PASSWORD" psql -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" -d "$$DB_NAME" "$${sql_args[@]}"

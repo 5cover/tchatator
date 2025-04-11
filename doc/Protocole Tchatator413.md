@@ -14,7 +14,7 @@ Version 1.1
 - [Erreurs communes](#erreurs-communes)
 - [Chaînes de connection](#chaînes-de-connection)
 - [Actions](#actions)
-  - [`whois` : rechercher un compte](#whois--rechercher-un-compte)
+  - [`whois` : rechercher un utilisateur](#whois--rechercher-un-utilisateur)
     - [Réponse nominale](#réponse-nominale)
     - [Erreurs](#erreurs)
   - [`send` : envoyer un message](#send--envoyer-un-message)
@@ -155,16 +155,16 @@ Elle se comporte d'une clé d'API, optionellement suivie d'un symbole monétaire
 
 ## Actions
 
-### `whois` : rechercher un compte
+### `whois` : rechercher un utilisateur
 
 **Rôles** : *tous*
 
 Argument|Type|Description
 -|-|-
 `constr`|Chaîne de connection|Votre chaîne de connection
-`user`|Clé de compte (ID, pseudo, e-mail)|Identifie l'utilisateur à rechercher
+`user`|Clé d'utilisateur (ID, pseudo, e-mail)|Identifie l'utilisateur à rechercher
 
-Obtient les informations d'un compte à partir d'unee de ses clés candidates (ID, pseudo, e-mail).
+Obtient les informations d'un utilisateur à partir d'unee de ses clés candidates (ID, pseudo, e-mail).
 
 #### Réponse nominale
 
@@ -185,7 +185,7 @@ Valeur|Signification
 Statut|Raison
 -|-
 401|Clé d'API invalide
-404|Compte introuvable
+404|Utilisateur introuvable
 
 ### `send` : envoyer un message
 
@@ -194,7 +194,7 @@ Statut|Raison
 Argument|Type|Description
 -|-|-
 `constr`|Chaîne de connection|Votre chaîne de connection
-`dest`|Clé de compte (ID, pseudo, e-mail)|Identifie le compte destinataire
+`dest`|Clé d'utilisateur (ID, pseudo, e-mail)|Identifie le utilisateur destinataire
 content|string|contenu du message
 
 Envoie un message.
@@ -211,7 +211,7 @@ Statut|Raison
 -|-
 401|La clé d'API fournie n'appartient pas à un utilisateur du rôle autorisé
 403|utilisateur actuel bloqué ou banni
-404|Compte *dest* introuvable
+404|Utilisateur *dest* introuvable
 
 #### Invariants
 
@@ -438,7 +438,7 @@ Nom|Description
 Argument|Type|Description
 -|-|-
 `constr`|Chaîne de connection|Votre chaîne de connection
-`user`|Clé de compte utilisateur (ID, pseudo, e-mail)|Identifie le client à bloquer (la cible)
+`user`|Clé d'utilisateur utilisateur (ID, pseudo, e-mail)|Identifie le client à bloquer (la cible)
 
 Bloque un client pendant une durée limitée.
 
@@ -473,7 +473,7 @@ Nom|Description
 Argument|Type|Description
 -|-|-
 `constr`|Chaîne de connection|Votre chaîne de connection
-`user`|Clé de compte utilisateur (ID, pseudo, e-mail)|Identifie le client à débloquer (la cible)
+`user`|Clé d'utilisateur utilisateur (ID, pseudo, e-mail)|Identifie le client à débloquer (la cible)
 
 Débloque un client avant l'expiration de son blocage.
 
@@ -503,7 +503,7 @@ Nom|Description
 Argument|Type|Description
 -|-|-
 `constr`|Chaîne de connection|Votre chaîne de connection
-`user`|Clé de compte utilisateur (ID, pseudo, e-mail)|Identifie le client à bannir (la cible)
+`user`|Clé d'utilisateur utilisateur (ID, pseudo, e-mail)|Identifie le client à bannir (la cible)
 
 Bannit un client.
 
@@ -538,7 +538,7 @@ Nom|Description
 Argument|Type|Description
 -|-|-
 `constr`|Chaîne de connection|Votre chaîne de connection
-`user`|Clé de compte utilisateur (ID, pseudo, e-mail)|Identifie le client à débannir (la cible)
+`user`|Clé d'utilisateur utilisateur (ID, pseudo, e-mail)|Identifie le client à débannir (la cible)
 
 Débannit un client.
 

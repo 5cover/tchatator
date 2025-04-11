@@ -3,15 +3,15 @@
 /// @brief DAL - Implementation
 /// @date 23/01/2025
 
+#include "tchatator413/db.h"
 #include "tchatator413/cfg.h"
+#include "tchatator413/util.h"
 #include <assert.h>
 #include <bcrypt/bcrypt.h>
 #include <byteswap.h>
 #include <netinet/in.h>
 #include <postgresql/libpq-fe.h>
 #include <stdlib.h>
-#include <tchatator413/db.h>
-#include <tchatator413/util.h>
 
 #define TBL_USER "user"
 #define TBL__MSG "_msg"
@@ -252,7 +252,7 @@ int db_count_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipient_id
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2 };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2 };
     int const args_fmt[array_len(args)] = { 1, 1 };
-    PGresult *result = PQexecParams(db, "select count(*) from " TBL__MSG " where coalesce(id_compte_sender,0)=$1 and id_compte_recipient=$2",
+    PGresult *result = PQexecParams(db, "select count(*) from " TBL__MSG " where coalesce(user_id_sender,0)=$1 and user_id_recipient=$2",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     int res;
@@ -298,7 +298,7 @@ msg_list_t db_get_inbox(db_t *db, cfg_t *cfg,
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2, (char const *)&arg3 };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2, sizeof arg3 };
     int const args_fmt[array_len(args)] = { 1, 1, 1 };
-    PGresult *result = PQexecParams(db, "select msg_id, content, sent_at, read_age, edited_age, id_compte_sender from " TBL_INBOX " where id_compte_recipient=$1 limit $2::int offset $3::int",
+    PGresult *result = PQexecParams(db, "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_INBOX " where user_id_recipient=$1 limit $2::int offset $3::int",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     msg_list_t msg_list = {};
@@ -335,7 +335,7 @@ errstatus_t db_get_msg(db_t *db, cfg_t *cfg, msg_t *msg, void **out_memory_owner
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "select content, sent_at, read_age, edited_age, deleted_age, id_compte_sender, ID_compte_recipient from " TBL__MSG " where msg_id=$1",
+    PGresult *result = PQexecParams(db, "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, USER_id_recipient from " TBL__MSG " where msg_id=$1",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     errstatus_t res;

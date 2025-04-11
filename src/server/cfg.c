@@ -12,6 +12,7 @@
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysexits.h>
 #include <time.h>
 
 #define STD_LOG_STREAM stderr
@@ -33,6 +34,15 @@ struct cfg {
 };
 
 #define INTRO "config: "
+
+char const *require_env(cfg_t *cfg, char const *name) {
+    char *value = getenv(name);
+    if (!value) {
+        cfg_log(cfg, log_error, "envvar missing: %s\n", name);
+        exit(EX_USAGE);
+    }
+    return value;
+}
 
 static inline void _vlog(char const *file, int line, FILE *stream, log_lvl_t lvl, char const *fmt, va_list ap) {
     time_t t = time(NULL);

@@ -8,6 +8,7 @@
 
 ---
 
+- [ ] use `""` for user (tchatator413/...) includes instead of `<>`
 - [x] change admin user id representation : there is a duplication : admin role + id = 0. Solution: say user with ID 0 is "root aka the super-user" and has admin permissions. Other admins can be defined.
 - [x] remove session managment: it only complicate the protocol: api keys are enough of an an authentification
 - [ ] use asprintf instead of bufffer_size and vstrfmt
