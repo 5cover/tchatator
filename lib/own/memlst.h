@@ -8,6 +8,17 @@
 
 #include <stdbool.h>
 
+// enable this for debuggin
+//#define MEMLST_TRACE
+
+#ifdef MEMLST_TRACE
+#define FILE_LINE_PARAMS , char const *file, int line
+#define FILE_LINE_ARGS , file, line
+#else
+#define FILE_LINE_PARAMS
+#define FILE_LINE_ARGS
+#endif
+
 typedef struct memlst memlst_t;
 
 /// @brief Create a new, empty memory list.
@@ -19,7 +30,7 @@ void dtor_json_object(void *json_object);
 /// @brief Destroy a memory list. Free all allocated memory, including memory for the memory list itself.
 /// @param memlst A memory list.
 /// @remark @p memlst points to invalid memory after calling this function.
-void memlst_destroy(memlst_t **memlst);
+void memlst_destroy(memlst_t **memlst FILE_LINE_PARAMS);
 
 /// @brief A destructor function for memory lists.
 typedef void (*fn_dtor_t)(void *);
@@ -30,10 +41,16 @@ typedef void (*fn_dtor_t)(void *);
 /// @param ptr The pointer to add.
 /// @return @p ptr, or @c NULL or the system is out of memoory.
 /// @remark if @p ptr is @c NULL, this is a no-op and other parameters can be @c NULL.
-void *memlst_add(memlst_t *restrict *restrict memlst, fn_dtor_t dtor, void *restrict ptr);
+void *memlst_add(memlst_t *restrict *restrict memlst, fn_dtor_t dtor, void *restrict ptr FILE_LINE_PARAMS);
 
 /// @brief Empty a memory list's allocations and runs destructors.
 /// @param memlst A memory list.
-void memlst_collect(memlst_t **memlst);
+void memlst_collect(memlst_t **memlst FILE_LINE_PARAMS);
+
+#if !defined MEMLST_IMPL && defined MEMLST_TRACE
+#define memlst_destroy(memlst) memlst_destroy(memlst, __FILE__, __LINE__)
+#define memlst_add(memlst, dtor, ptr) memlst_add(memlst, dtor, ptr, __FILE__, __LINE__)
+#define memlst_collect(memlst) memlst_collect(memlst, __FILE__, __LINE__)
+#endif
 
 #endif // MEMLST_H

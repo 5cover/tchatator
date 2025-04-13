@@ -51,7 +51,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 
 #define DO whois
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -67,7 +67,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO send
     case ACTION_TYPE(DO): {
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -100,7 +100,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO motd
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -110,7 +110,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO inbox
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -123,7 +123,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO outbox
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -133,7 +133,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO edit
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -143,7 +143,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO rm
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -159,7 +159,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO block
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_admin | role_pro);
@@ -169,7 +169,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO unblock
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_admin | role_pro);
@@ -179,7 +179,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO ban
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_admin | role_pro);
@@ -189,7 +189,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO unban
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(cfg, db, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_admin | role_pro);

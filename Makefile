@@ -1,15 +1,15 @@
 # === Config ===
 CC := gcc
-# todo: readd -pedantic when we get C23 support
+# todo: re-add -pedantic when we get C23 support
 # -Wmissing-prototypes
 CFLAGS := -std=gnu2x -Wall -Wextra \
          -Wcast-qual -Wcast-align -Wstrict-aliasing -Wpointer-arith \
          -Winit-self -Wshadow -Wstrict-prototypes -Wformat -Wno-format-zero-length \
          -Wredundant-decls -Wfloat-equal -Wundef -Wvla -Wno-parentheses \
          -Ilib/own -isystem lib/vendor \
+		 -Werror=incompatible-pointer-types \
          -D__SKIP_GNU \
  		 #-fsanitize=address # messes with debugging
- 		 #-fanalyzer
 
 LFLAGS_CLIENT := -I/usr/include/json-c -ljson-c
 LFLAGS_SERVER := -I/usr/include/json-c -ljson-c -I/usr/include/postgresql -L/usr/lib/x86_64-linux-gnu -lpq

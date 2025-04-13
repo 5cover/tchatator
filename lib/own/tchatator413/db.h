@@ -9,9 +9,10 @@
 #include "errstatus.h"
 #include "tchatator413/cfg.h"
 #include "types.h"
+#include "memlst.h"
 
 /// @brief An opaque handle to a database connection.
-typedef void db_t;
+typedef union db db_t;
 
 /// @brief Represents a user in the system.
 /// @details This struct contains the various fields that make up a user's profile, such as their ID, kind, email, names, and display name.

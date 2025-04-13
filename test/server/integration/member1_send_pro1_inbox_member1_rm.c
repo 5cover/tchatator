@@ -90,8 +90,10 @@ TEST_SIGNATURE(NAME) {
     test_t test = TEST_INIT(NAME);
 
     uuid4_t api_key_m1, api_key_p1;
-    assert(uuid4_parse(&api_key_m1, API_KEY_MEMBER1));
-    assert(uuid4_parse(&api_key_p1, API_KEY_PRO1));
+    bool ok = uuid4_parse(&api_key_m1, API_KEY_MEMBER1);
+    assert(ok);
+    ok = uuid4_parse(&api_key_p1, API_KEY_PRO1);
+    assert(ok);
 
     // Member sends message
     {

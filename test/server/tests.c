@@ -39,48 +39,6 @@ static inline char const *json_object_get_fmt(json_object *obj) {
         : NULL;
 }
 
-static inline json_object *reduce_fmt_v(json_object *obj, va_list *ap) {
-    char const *fmt = json_object_get_fmt(obj);
-    if (fmt) {
-        // arguments -> json object
-        char *fmted = vstrfmt(fmt, *ap);
-        if (!fmted) errno_exit("vstrfmt");
-        // va_advance_printf(ap, fmt);
-
-        json_object_put(obj);
-        obj = json_tokener_parse(fmted);
-        free(fmted);
-        return obj;
-    }
-
-    switch (json_object_get_type(obj)) {
-    case json_type_null: break;
-    case json_type_boolean: break;
-    case json_type_double: break;
-    case json_type_int: break;
-    case json_type_object: {
-        struct lh_entry *entry;
-        entry = json_object_get_object(obj)->head;
-        while (entry) {
-            entry->v = reduce_fmt_v(lh_entry_v(entry), ap);
-            entry = entry->next;
-        }
-        break;
-    }
-    case json_type_array: {
-        size_t len = json_object_array_length(obj);
-        for (size_t i = 0; i < len; ++i) {
-            json_object *old_obj = json_object_array_get_idx(obj, i);
-            json_object *new_obj = reduce_fmt_v(old_obj, ap);
-            if (new_obj != old_obj) json_object_array_put_idx(obj, i, new_obj);
-        }
-    }
-    case json_type_string: break;
-    }
-
-    return obj;
-}
-
 json_object *load_json(char const *input_filename) {
     json_object *obj = json_object_from_file(input_filename);
     if (!obj) {

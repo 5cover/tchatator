@@ -31,12 +31,12 @@
 
 #ifdef __GNUC__
 #define pq_send_l(val) __extension__({_Static_assert(sizeof val == 4, "type has wrong size"); htonl((uint32_t)val); })
-#define pq_recv_l(type, val) __extension__({_Static_assert(sizeof (type) == sizeof (uint32_t), "use pq_recv_ll"); (type)(ntohl(*(uint32_t *)(val))); })
-#define pq_recv_ll(type, val) __extension__(({_Static_assert(sizeof (type) == sizeof (uint64_t), "use pq_recv_l"); (type)(ntohll(*(uint64_t *)val)); }))
+#define pq_recv_l(type, val) __extension__({_Static_assert(sizeof (type) == sizeof (uint32_t), "use pq_recv_ll"); (type)(ntohl(*(uint32_t *)(void*)(val))); })
+#define pq_recv_ll(type, val) __extension__(({_Static_assert(sizeof (type) == sizeof (uint64_t), "use pq_recv_l"); (type)(ntohll(*(uint64_t *)(void*)(val))); }))
 #else
 #define pq_send_l(val) htonl(val)
-#define pq_recv_l(type, val) (type)(ntohl(*(type *)(val)))
-#define pq_recv_ll(type, val) (type)(ntohll(*(type *)val))
+#define pq_recv_l(type, val) (type)(ntohl(*(type *)(void *)(val)))
+#define pq_recv_ll(type, val) (type)(ntohll(*(type *)(void *)(val)))
 #endif // __GNUC__
 
 #define PG_EPOCH 946684800
@@ -46,8 +46,15 @@
 #define log_fmt_pq(db) "database: %s\n", PQerrorMessage(db)
 #define log_fmt_pq_result(result) "database: %s\n", PQresultErrorMessage(result)
 
+union db {
+    PGconn *__conn__do_not_use_directly;
+};
+_Static_assert(sizeof(db_t) == sizeof(PGconn *));
+#define db2conn(db) (PGconn *)(db)
+#define conn2db(conn) (db_t *)(conn)
+
 db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *database, char const *username, char const *password) {
-    PGconn *db = PQsetdbLogin(
+    PGconn *conn = PQsetdbLogin(
         host,
         port,
         NULL, NULL,
@@ -55,7 +62,7 @@ db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *dat
         username,
         password);
     const int v = cfg_verbosity(cfg);
-    PQsetErrorVerbosity(db,
+    PQsetErrorVerbosity(conn,
         v <= -2
             ? PQERRORS_SQLSTATE
             : v == -1
@@ -65,19 +72,19 @@ db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *dat
             // verbosity >= 1
             : PQERRORS_VERBOSE);
 
-    if (PQstatus(db) != CONNECTION_OK) {
-        cfg_log(cfg, log_error, log_fmt_pq(db));
-        PQfinish(db);
+    if (PQstatus(conn) != CONNECTION_OK) {
+        cfg_log(cfg, log_error, log_fmt_pq(conn));
+        PQfinish(conn);
         return NULL;
     }
 
     cfg_log(cfg, log_info, "connected to db '%s' on %s:%s as %s\n", database, host, port, username);
 
-    return db;
+    return conn2db(conn);
 }
 
 void db_destroy(db_t *db) {
-    PQfinish(db);
+    PQfinish(db2conn(db));
 }
 
 static inline bool check_password(char const *password, char const hash[BCRYPT_HASHSIZE]) {
@@ -113,16 +120,8 @@ errstatus_t db_verify_user_constr(db_t *db, cfg_t *cfg, user_identity_t *out_use
     uuid4_repr(constr.api_key, api_key_repr)[UUID4_REPR_LENGTH] = '\0';
     const char *args[] = { api_key_repr };
 
-    // todo: remove debug loggin
-
-    // fprintf(stderr, "[debug] about to call PQexecParams with api_key_repr = \"%s\"\n", api_key_repr);
-    // fprintf(stderr, "[debug] args = %p args[0] = %p (%s)\n", (void const *)args, (void const *)args[0], args[0]);
-
-    PGresult *result = PQexecParams(db, "select role,password_hash,user_id from " TBL_USER " where api_key=$1",
+    PGresult *result = PQexecParams(db2conn(db), "select role,password_hash,user_id from " TBL_USER " where api_key=$1",
         1, NULL, args, NULL, NULL, 1);
-
-    fprintf(stderr, "[debug] PQstatus: %d\n", PQstatus(db));
-    fprintf(stderr, "[debug] PQerrorMessage: %s\n", PQerrorMessage(db));
 
     errstatus_t res;
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -149,7 +148,7 @@ int db_get_user_role(db_t *db, cfg_t *cfg, serial_t user_id) {
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "select role from " TBL_USER " where user_id=$1",
+    PGresult *result = PQexecParams(db2conn(db), "select role from " TBL_USER " where user_id=$1",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     int res;
@@ -169,7 +168,7 @@ int db_get_user_role(db_t *db, cfg_t *cfg, serial_t user_id) {
 }
 
 serial_t db_get_user_id_by_email(db_t *db, cfg_t *cfg, const char *email) {
-    PGresult *result = PQexecParams(db, "select user_id from " TBL_USER " where email = $1",
+    PGresult *result = PQexecParams(db2conn(db), "select user_id from " TBL_USER " where email = $1",
         1, NULL, &email, NULL, NULL, 1);
 
     serial_t res;
@@ -189,7 +188,7 @@ serial_t db_get_user_id_by_email(db_t *db, cfg_t *cfg, const char *email) {
 
 serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
     // First search by member user_name since they are unique
-    PGresult *result = PQexecParams(db, "select user_id from " TBL_MEMBER " where user_name=$1",
+    PGresult *result = PQexecParams(db2conn(db), "select user_id from " TBL_MEMBER " where user_name=$1",
         1, NULL, &name, NULL, NULL, 1);
 
     serial_t res;
@@ -200,7 +199,7 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
     } else if (PQntuples(result) == 0) {
         PQclear(result);
         // Fallback to pro business name (there must be only 1)
-        result = PQexecParams(db, "select user_id from " TBL_PRO " where business_name=$1",
+        result = PQexecParams(db2conn(db), "select user_id from " TBL_PRO " where business_name=$1",
             1, NULL, &name, NULL, NULL, 1);
 
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -226,7 +225,7 @@ errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *out_user)
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
     PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
-        PQexecParams(db, "select role,user_id,member_user_name,pro_business_name from " TBL_USER " where user_id=$1",
+        PQexecParams(db2conn(db), "select role,user_id,member_user_name,pro_business_name from " TBL_USER " where user_id=$1",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -259,7 +258,7 @@ int db_count_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipient_id
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2 };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2 };
     int const args_fmt[array_len(args)] = { 1, 1 };
-    PGresult *result = PQexecParams(db, "select count(*) from " TBL__MSG " where coalesce(user_id_sender,0)=$1 and user_id_recipient=$2",
+    PGresult *result = PQexecParams(db2conn(db), "select count(*) from " TBL__MSG " where coalesce(user_id_sender,0)=$1 and user_id_recipient=$2",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     int res;
@@ -280,7 +279,7 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2, content };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2 };
     int const args_fmt[array_len(args)] = { 1, 1, 0 };
-    PGresult *result = PQexecParams(db, "select " CALL_FUN_SEND_MSG("$1", "$2", "$3"),
+    PGresult *result = PQexecParams(db2conn(db), "select " CALL_FUN_SEND_MSG("$1", "$2", "$3"),
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     serial_t res;
@@ -308,7 +307,7 @@ errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2, sizeof arg3 };
     int const args_fmt[array_len(args)] = { 1, 1, 1 };
     PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
-        PQexecParams(db, "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_INBOX " where user_id_recipient=$1 limit $2::int offset $3::int",
+        PQexecParams(db2conn(db), "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_INBOX " where user_id_recipient=$1 limit $2::int offset $3::int",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -341,7 +340,7 @@ errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *msg) {
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
     PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
-        PQexecParams(db, "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, user_id_recipient from " TBL__MSG " where msg_id=$1",
+        PQexecParams(db2conn(db), "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, user_id_recipient from " TBL__MSG " where msg_id=$1",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -367,7 +366,7 @@ errstatus_t db_rm_msg(db_t *db, cfg_t *cfg, serial_t msg_id) {
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "delete from " TBL__MSG " where msg_id=$1",
+    PGresult *result = PQexecParams(db2conn(db), "delete from " TBL__MSG " where msg_id=$1",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     errstatus_t res;
@@ -386,7 +385,7 @@ errstatus_t db_rm_msg(db_t *db, cfg_t *cfg, serial_t msg_id) {
 }
 
 errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ctx) {
-    PGresult *result = PQexec(db, "begin");
+    PGresult *result = PQexec(db2conn(db), "begin");
 
     errstatus_t res;
 
@@ -401,7 +400,7 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ct
         res = body(db, cfg, ctx);
 
         // End the transaction now.
-        result = PQexec(db, res == errstatus_ok ? "commit" : "rollback");
+        result = PQexec(db2conn(db), res == errstatus_ok ? "commit" : "rollback");
 
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
             cfg_log(cfg, log_error, log_fmt_pq_result(result));

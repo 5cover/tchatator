@@ -6,11 +6,12 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include <memlst.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define OPAQUE_STRUCT_DECL(name) typedef struct name { int _##name##_tag; } name##_t;
 
 /// @brief Safely destroys a memory list and returns a status.
 ///

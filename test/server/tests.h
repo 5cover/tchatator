@@ -38,34 +38,34 @@ void observe_put_role(void);
 #pragma GCC diagnostic ignored "-Wcomment"
 
 /// @brief X-macro that expands to the list of Tchattator413 tests.
-#define X_TESTS(X)                              \
-    X(db_verify_user_constr)                    \
-    /* Integration tests (> 1 action) */        \
+#define X_TESTS(X)                        \
+    /* Integration tests (> 1 action) */  \
     X(member1_send_pro1_inbox_member1_rm) \
-    /* Unit tests */                            \
-    X(db_get_user)                              \
-    /*X(admin_whois_imax)*/                     \
-    /*X(admin_whois_neg1)*/                     \
-    /*X(admin_whois_pro1)*/                     \
-    /*X(empty)*/                                \
-    /*X(invalid_whois_pro1)*/                   \
-    /*X(malformed)*/                            \
-    /*X(member1_send)*/                         \
-    /*X(member1_whois_member1_by_email)*/       \
-    /*X(member1_whois_member1_by_name)*/        \
-    /*X(member1_whois_member1)*/                \
-    /*X(member1_whois_pro1_by_email)*/          \
-    /*X(member1_whois_pro1_by_name)*/           \
-    /*X(member1_whois_pro1)*/                   \
-    /*X(pro1_inbox)*/                           \
-    /*X(pro1_send)*/                            \
-    /*X(zero)*/                                 \
+    /* Unit tests */                      \
+    X(db_get_user)                        \
+    X(db_verify_user_constr)              \
+    /*X(admin_whois_imax)*/               \
+    /*X(admin_whois_neg1)*/               \
+    /*X(admin_whois_pro1)*/               \
+    /*X(empty)*/                          \
+    /*X(invalid_whois_pro1)*/             \
+    /*X(malformed)*/                      \
+    /*X(member1_send)*/                   \
+    /*X(member1_whois_member1_by_email)*/ \
+    /*X(member1_whois_member1_by_name)*/  \
+    /*X(member1_whois_member1)*/          \
+    /*X(member1_whois_pro1_by_email)*/    \
+    /*X(member1_whois_pro1_by_name)*/     \
+    /*X(member1_whois_pro1)*/             \
+    /*X(pro1_inbox)*/                     \
+    /*X(pro1_send)*/                      \
+    /*X(zero)*/                           \
     //
 #pragma GCC diagnostic pop
 
 /// @brief Expands to the signature of a Tchattator413 test function
 /// @param name The unquoted name of the test.
-#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t **pmem, cfg_t * cfg, db_t * db)
+#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t * *pmem, cfg_t * cfg, db_t * db)
 
 #define DECLARE_TEST(name) TEST_SIGNATURE(name);
 X_TESTS(DECLARE_TEST)
@@ -75,7 +75,7 @@ X_TESTS(DECLARE_TEST)
     .t = test_start(STR(name)), \
     .cfg = cfg,                 \
     .db = db,                   \
-    .pmem = pmem,       \
+    .pmem = pmem,               \
 };
 
 #define OUT_JSON(NAME, suffix) "test/server/json/" STR(NAME) "/out" suffix ".json"

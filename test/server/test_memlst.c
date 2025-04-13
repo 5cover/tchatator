@@ -46,7 +46,7 @@ static inline void testfree(void *ptr) {
         waitpid(pid, &status, 0);                               \
         test_case(&t,                                           \
             WIFSIGNALED(status) && WTERMSIG(status) == SIGABRT, \
-            "Assertion triggered (SIGABRT caught)");            \
+            "status == %d", status);            \
     } while (0)
 
 struct test test_memlst(void) {
