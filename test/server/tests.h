@@ -17,6 +17,7 @@
 // Other tests
 
 struct test test_uuid4(void);
+struct test test_memlst(void);
 
 void observe_put_role(void);
 
@@ -37,28 +38,28 @@ void observe_put_role(void);
 #pragma GCC diagnostic ignored "-Wcomment"
 
 /// @brief X-macro that expands to the list of Tchattator413 tests.
-#define X_TESTS(X)                        \
-    X(db_verify_user_constr)              \
-    /* Integration tests (> 1 action) */  \
-    X(member1_send_pro1_inbox_member1_rm) \
-    /* Unit tests */                      \
-    X(db_get_user)                        \
-    /*X(admin_whois_imax)*/               \
-    /*X(admin_whois_neg1)*/               \
-    /*X(admin_whois_pro1)*/               \
-    /*X(empty)*/                          \
-    /*X(invalid_whois_pro1)*/             \
-    /*X(malformed)*/                      \
-    /*X(member1_send)*/                   \
-    /*X(member1_whois_member1_by_email)*/ \
-    /*X(member1_whois_member1_by_name)*/  \
-    /*X(member1_whois_member1)*/          \
-    /*X(member1_whois_pro1_by_email)*/    \
-    /*X(member1_whois_pro1_by_name)*/     \
-    /*X(member1_whois_pro1)*/             \
-    /*X(pro1_inbox)*/                     \
-    /*X(pro1_send)*/                      \
-    /*X(zero)*/                           \
+#define X_TESTS(X)                              \
+    X(db_verify_user_constr)                    \
+    /* Integration tests (> 1 action) */        \
+    /* X(member1_send_pro1_inbox_member1_rm) */ \
+    /* Unit tests */                            \
+    X(db_get_user)                              \
+    /*X(admin_whois_imax)*/                     \
+    /*X(admin_whois_neg1)*/                     \
+    /*X(admin_whois_pro1)*/                     \
+    /*X(empty)*/                                \
+    /*X(invalid_whois_pro1)*/                   \
+    /*X(malformed)*/                            \
+    /*X(member1_send)*/                         \
+    /*X(member1_whois_member1_by_email)*/       \
+    /*X(member1_whois_member1_by_name)*/        \
+    /*X(member1_whois_member1)*/                \
+    /*X(member1_whois_pro1_by_email)*/          \
+    /*X(member1_whois_pro1_by_name)*/           \
+    /*X(member1_whois_pro1)*/                   \
+    /*X(pro1_inbox)*/                           \
+    /*X(pro1_send)*/                            \
+    /*X(zero)*/                                 \
     //
 #pragma GCC diagnostic pop
 
@@ -159,19 +160,19 @@ void test_case_n_actions(test_t *test, int expected);
 bool json_object_eq_fmt(json_object *obj_actual, json_object *obj_expected);
 
 /// @brief Test an integer for equality with an expected value.
-#define test_case_eq_int(t, actual, expected, fmt) test_case((t), actual == expected, fmt " == %d", actual)
+#define TEST_CASE_EQ_INT(t, actual, expected, fmt) test_case((t), actual == expected, fmt " == %d", actual)
 /// @brief Test a long for equality with an expected value.
-#define test_case_eq_int64(t, actual, expected, fmt) test_case((t), actual == expected, fmt " == %ld", actual)
+#define TEST_CASE_EQ_INT64(t, actual, expected, fmt) test_case((t), actual == expected, fmt " == %ld", actual)
 /// @brief Test a string for equality with an expected value.
-#define test_case_eq_str(t, actual, expected, fmt) test_case((t), streq_nullable(actual, expected), fmt " == %s", actual)
+#define TEST_CASE_EQ_STR(t, actual, expected, fmt) test_case((t), streq_nullable(actual, expected), fmt " == %s", actual)
 /// @brief Test a JSON object for equality with an expected value.
-#define test_case_eq_json_object(t, actual, expected, fmt) test_case((t), json_object_equal(actual, expected), fmt " == %s", min_json(actual))
+#define TEST_CASE_EQ_JSON_OBJECT(t, actual, expected, fmt) test_case((t), json_object_equal(actual, expected), fmt " == %s", min_json(actual))
 
 /// @brief Temporary placeholder for the representation of the UUID currently being tested for equality.
 extern char _g_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
 
 /// @brief Test an UUID for equality with an expected value.
-#define test_case_eq_uuid(t, actual, expected, fmt) test_case((t), uuid4_eq(actual, expected), \
+#define TEST_CASE_EQ_UUID(t, actual, expected, fmt) test_case((t), uuid4_eq(actual, expected), \
     fmt UUID4_FMT " == " UUID4_FMT,                                                            \
     uuid4_repr(actual, _g_test_case_eq_uuid_repr + UUID4_REPR_LENGTH),                         \
     uuid4_repr(expected, _g_test_case_eq_uuid_repr));

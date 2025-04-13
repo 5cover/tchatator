@@ -10,18 +10,18 @@
 
 static void on_action(action_t const *action, void *t) {
     base_on_action(t);
-    if (!test_case_eq_int(t, action->type, action_type_error, )) return;
+    if (!TEST_CASE_EQ_INT(t, action->type, action_type_error, )) return;
 }
 
 static void on_response(response_t const *response, void *t) {
     base_on_response(t);
     test_case(t, !response->has_next_page, "");
-    if (!test_case_eq_int(t, response->type, action_type_error, )) return;
-    if (!test_case_eq_int(t, response->body.error.type, action_error_type_invalid, )) return;
-    test_case_eq_str(t, response->body.error.info.invalid.location, "whois.with.user", );
-    test_case_eq_str(t, response->body.error.info.invalid.reason, "invalid user key", );
+    if (!TEST_CASE_EQ_INT(t, response->type, action_type_error, )) return;
+    if (!TEST_CASE_EQ_INT(t, response->body.error.type, action_error_type_invalid, )) return;
+    TEST_CASE_EQ_STR(t, response->body.error.info.invalid.location, "whois.with.user", );
+    TEST_CASE_EQ_STR(t, response->body.error.info.invalid.reason, "invalid user key", );
     json_object *obj_bad = json_object_new_int(-1);
-    test_case_eq_json_object(t, response->body.error.info.invalid.obj_bad, obj_bad, );
+    TEST_CASE_EQ_JSON_OBJECT(t, response->body.error.info.invalid.obj_bad, obj_bad, );
     json_object_put(obj_bad);
 }
 

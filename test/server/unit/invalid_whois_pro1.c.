@@ -10,17 +10,17 @@
 
 static void on_action(action_t const *action, void *t) {
     base_on_action(t);
-    if (!test_case_eq_int(t, action->type, action_type_whois, )) return;
-    test_case_eq_uuid(t, action->with.whois.api_key, API_KEY_NONE1_UUID, );
-    test_case_eq_int(t, action->with.whois.user_id, 1, );
+    if (!TEST_CASE_EQ_INT(t, action->type, action_type_whois, )) return;
+    TEST_CASE_EQ_UUID(t, action->with.whois.api_key, API_KEY_NONE1_UUID, );
+    TEST_CASE_EQ_INT(t, action->with.whois.user_id, 1, );
 }
 
 static void on_response(response_t const *response, void *t) {
     base_on_response(t);
     test_case(t, !response->has_next_page, "");
-    if (!test_case_eq_int(t, response->type, action_type_error, )) return;
-    if (!test_case_eq_int(t, response->body.error.type, action_error_type_other, )) return;
-    test_case_eq_int(t, response->body.error.info.other.status, status_unauthorized, );
+    if (!TEST_CASE_EQ_INT(t, response->type, action_type_error, )) return;
+    if (!TEST_CASE_EQ_INT(t, response->body.error.type, action_error_type_other, )) return;
+    TEST_CASE_EQ_INT(t, response->body.error.info.other.status, status_unauthorized, );
 }
 
 TEST_SIGNATURE(NAME) {

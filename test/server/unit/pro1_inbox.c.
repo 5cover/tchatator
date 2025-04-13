@@ -17,8 +17,8 @@ static void on_action(action_t const *action, void *t) {
     test_t const *test = base_on_action(t);
     switch (test->n_actions) {
     case 1: // inbox
-        if (!test_case_eq_int(t, action->type, action_type_inbox, )) return;
-        test_case_eq_int64(t, action->with.send.token, gs_token_pro1, );
+        if (!TEST_CASE_EQ_INT(t, action->type, action_type_inbox, )) return;
+        TEST_CASE_EQ_INT64(t, action->with.send.token, gs_token_pro1, );
         break;
     default: test_fail(t, "wrong test->n_actions: %d", test->n_actions);
     }
@@ -29,16 +29,16 @@ static void on_response(response_t const *response, void *t) {
     test_case(t, !response->has_next_page, "");
     switch (test->n_responses) {
     case 1: { // inbox
-        if (!test_case_eq_int(t, response->type, action_type_inbox, )) return;
-        if (!test_case_eq_int64(t, response->body.inbox.n_msgs, 1, )) return;
+        if (!TEST_CASE_EQ_INT(t, response->type, action_type_inbox, )) return;
+        if (!TEST_CASE_EQ_INT64(t, response->body.inbox.n_msgs, 1, )) return;
         msg_t msg = response->body.inbox.msgs[0];
-        test_case_eq_int(t, msg.id, 1, );
-        test_case_eq_int(t, msg.read_age, 0, );
-        test_case_eq_int(t, msg.edited_age, 0, );
-        test_case_eq_int(t, msg.deleted_age, 0, );
-        test_case_eq_int(t, msg.user_id_sender, USER_ID_MEMBER1, );
-        test_case_eq_int(t, msg.user_id_recipient, USER_ID_PRO1, );
-        test_case_eq_str(t, msg.content, MSG_CONTENT, );
+        TEST_CASE_EQ_INT(t, msg.id, 1, );
+        TEST_CASE_EQ_INT(t, msg.read_age, 0, );
+        TEST_CASE_EQ_INT(t, msg.edited_age, 0, );
+        TEST_CASE_EQ_INT(t, msg.deleted_age, 0, );
+        TEST_CASE_EQ_INT(t, msg.user_id_sender, USER_ID_MEMBER1, );
+        TEST_CASE_EQ_INT(t, msg.user_id_recipient, USER_ID_PRO1, );
+        TEST_CASE_EQ_STR(t, msg.content, MSG_CONTENT, );
         break;
     }
     default: test_fail(t, "wrong test->n_responses: %d", test->n_actions);
@@ -62,7 +62,7 @@ TEST_SIGNATURE(NAME) {
                 },
             },
             cfg, db, server);
-        if (test_case_eq_int(&test.t, response.type, action_type_login, "pro logs in")) return test.t;
+        if (TEST_CASE_EQ_INT(&test.t, response.type, action_type_login, "pro logs in")) return test.t;
         gs_token_pro1 = response.body.login.token;
         response_destroy(&response);
     }
@@ -84,7 +84,7 @@ TEST_SIGNATURE(NAME) {
                 .type = action_type_logout,
                 .with.logout.token = gs_token_pro1 },
             cfg, db, server);
-        test_case_eq_int(&test.t, response.type, action_type_logout, "pro logs out");
+        TEST_CASE_EQ_INT(&test.t, response.type, action_type_logout, "pro logs out");
         response_destroy(&response);
     }
 

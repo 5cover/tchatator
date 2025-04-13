@@ -184,7 +184,7 @@ void put_role(role_t role, FILE *stream);
 /// @param db The database connection.
 /// @param obj The JSON object allegedly containing an action.
 /// @return The parsed action.
-action_t action_parse(cfg_t *cfg, db_t *db, json_object *obj);
+action_t action_parse(cfg_t *cfg, db_t *db, json_object const *obj);
 
 /// @brief Evaluate an action.
 /// @param action The action to evaluate.

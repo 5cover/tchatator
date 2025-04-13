@@ -20,17 +20,17 @@ typedef struct {
 static inline void on_action_send(action_t const *action, void *ctx) {
     context_t *c = ctx;
     base_on_action(&c->test);
-    if (!test_case_eq_int(&c->test.t, action->type, action_type_send, )) return;
-    test_case_eq_str(&c->test.t, action->with.send.content.val, MSG_CONTENT, );
-    test_case_eq_int(&c->test.t, action->with.send.dest_user_id, c->user_id_recipient, );
-    test_case_eq_int64(&c->test.t, action->with.send.token, c->token, );
+    if (!TEST_CASE_EQ_INT(&c->test.t, action->type, action_type_send, )) return;
+    TEST_CASE_EQ_STR(&c->test.t, action->with.send.content.val, MSG_CONTENT, );
+    TEST_CASE_EQ_INT(&c->test.t, action->with.send.dest_user_id, c->user_id_recipient, );
+    TEST_CASE_EQ_INT64(&c->test.t, action->with.send.token, c->token, );
 }
 
 static inline void on_response_send(response_t const *response, void *ctx) {
     context_t *c = ctx;
     base_on_response(&c->test);
     c->msg_id_set = false;
-    if (!test_case_eq_int(&c->test.t, response->type, action_type_send, )) return;
+    if (!TEST_CASE_EQ_INT(&c->test.t, response->type, action_type_send, )) return;
     c->msg_id = response->body.send.msg_id;
     c->msg_id_set = true;
 }
@@ -50,24 +50,24 @@ static inline errstatus_t transaction(db_t *db, cfg_t *cfg, void *ctx) {
     if (!c->msg_id_set) return errstatus_tested;
 
     obj_output_expected = load_jsonf(OUT_JSONF(send, "_send"), c->msg_id);
-    test_case_eq_json_object(&c->test.t, obj_output, obj_output_expected, );
+    TEST_CASE_EQ_JSON_OBJECT(&c->test.t, obj_output, obj_output_expected, );
     json_object_put(obj_output_expected);
     json_object_put(obj_output);
 
     // Try to retrieve it
     msg_t msg = { .id = c->msg_id };
     void *msg_memory_owner;
-    if (!test_case_eq_int(&c->test.t, db_get_msg(db, cfg, &msg, &msg_memory_owner), errstatus_ok, )) return errstatus_handled;
+    if (!TEST_CASE_EQ_INT(&c->test.t, db_get_msg(db, cfg, &msg, &msg_memory_owner), errstatus_ok, )) return errstatus_handled;
 
     // Assert its properties
-    test_case_eq_str(&c->test.t, msg.content, MSG_CONTENT, );
-    test_case_eq_int64(&c->test.t, msg.sent_at, msg_sentat, );
-    test_case_eq_int(&c->test.t, msg.deleted_age, 0, );
-    test_case_eq_int(&c->test.t, msg.edited_age, 0, );
-    test_case_eq_int(&c->test.t, msg.read_age, 0, );
-    test_case_eq_int(&c->test.t, msg.id, c->msg_id, );
-    test_case_eq_int(&c->test.t, msg.user_id_recipient, c->user_id_recipient, );
-    test_case_eq_int(&c->test.t, msg.user_id_sender, c->user_id_sender, );
+    TEST_CASE_EQ_STR(&c->test.t, msg.content, MSG_CONTENT, );
+    TEST_CASE_EQ_INT64(&c->test.t, msg.sent_at, msg_sentat, );
+    TEST_CASE_EQ_INT(&c->test.t, msg.deleted_age, 0, );
+    TEST_CASE_EQ_INT(&c->test.t, msg.edited_age, 0, );
+    TEST_CASE_EQ_INT(&c->test.t, msg.read_age, 0, );
+    TEST_CASE_EQ_INT(&c->test.t, msg.id, c->msg_id, );
+    TEST_CASE_EQ_INT(&c->test.t, msg.user_id_recipient, c->user_id_recipient, );
+    TEST_CASE_EQ_INT(&c->test.t, msg.user_id_sender, c->user_id_sender, );
 
     db_collect(msg_memory_owner);
 
@@ -93,7 +93,7 @@ TEST_SIGNATURE(NAME) {
     token_t token = response.body.login.token;
     response_destroy(&response);
 
-    test_case_eq_int(&test.t,
+    TEST_CASE_EQ_INT(&test.t,
         db_transaction(db, cfg, transaction,
             &(context_t) {
                 .test = test,
@@ -128,7 +128,7 @@ TEST_SIGNATURE(NAME) {
     token_t token = response.body.login.token;
     response_destroy(&response);
 
-    test_case_eq_int(&test.t,
+    TEST_CASE_EQ_INT(&test.t,
         db_transaction(db, cfg, transaction,
             &(context_t) {
                 .test = test,

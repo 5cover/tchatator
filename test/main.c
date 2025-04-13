@@ -24,6 +24,7 @@ int main(void) {
     } while (0)
 
     test(test_uuid4());
+    test(test_memlst());
 
     cfg_t *cfg = cfg_defaults();
     cfg_set_verbosity(cfg, INT_MAX);

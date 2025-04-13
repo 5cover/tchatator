@@ -19,9 +19,9 @@ TEST_SIGNATURE(NAME) {
                 .password = "pro1_mdp",
             });
 
-        if (!test_case_eq_int(&test.t, res, errstatus_ok, )) return test.t;
-        test_case_eq_int(&test.t, user.id, 1, );
-        test_case_eq_int(&test.t, user.role, role_pro, );
+        if (!TEST_CASE_EQ_INT(&test.t, res, errstatus_ok, )) return test.t;
+        TEST_CASE_EQ_INT(&test.t, user.id, 1, );
+        TEST_CASE_EQ_INT(&test.t, user.role, role_pro, );
     }
 
     {
@@ -32,9 +32,9 @@ TEST_SIGNATURE(NAME) {
                 .password = "member1_mdp",
             });
 
-        if (!test_case_eq_int(&test.t, res, errstatus_ok, )) return test.t;
-        test_case_eq_int(&test.t, user.id, 3, );
-        test_case_eq_int(&test.t, user.role, role_member, );
+        if (!TEST_CASE_EQ_INT(&test.t, res, errstatus_ok, )) return test.t;
+        TEST_CASE_EQ_INT(&test.t, user.id, 3, );
+        TEST_CASE_EQ_INT(&test.t, user.role, role_member, );
     }
 
     return test.t;

@@ -10,21 +10,21 @@
 
 static void on_action(action_t const *action, void *t) {
     base_on_action(t);
-    if (!test_case_eq_int(t, action->type, action_type_whois, "type")) return;
-    test_case_eq_uuid(t, action->with.whois.api_key, API_KEY_MEMBER1_UUID, "api key");
-    test_case_eq_int(t, action->with.whois.user_id, USER_ID_PRO1, "user id");
+    if (!TEST_CASE_EQ_INT(t, action->type, action_type_whois, "type")) return;
+    TEST_CASE_EQ_UUID(t, action->with.whois.api_key, API_KEY_MEMBER1_UUID, "api key");
+    TEST_CASE_EQ_INT(t, action->with.whois.user_id, USER_ID_PRO1, "user id");
 }
 
 static void on_response(response_t const *response, void *t) {
     base_on_response(t);
-    if (!test_case_eq_int(t, response->type, action_type_whois, "type")) return;
+    if (!TEST_CASE_EQ_INT(t, response->type, action_type_whois, "type")) return;
     test_case(t, !response->has_next_page, "");
-    test_case_eq_int(t, response->body.whois.user.id, USER_ID_PRO1, "user id");
-    test_case_eq_int(t, response->body.whois.user.kind, user_kind_pro_prive, "kind");
-    test_case_eq_str(t, response->body.whois.user.display_name, "pro1 corp", "display name");
-    test_case_eq_str(t, response->body.whois.user.email, "pro@1.413", "email");
-    test_case_eq_str(t, response->body.whois.user.first_name, "pro1_prenom", "first name");
-    test_case_eq_str(t, response->body.whois.user.last_name, "pro1_nom", "last name");
+    TEST_CASE_EQ_INT(t, response->body.whois.user.id, USER_ID_PRO1, "user id");
+    TEST_CASE_EQ_INT(t, response->body.whois.user.kind, user_kind_pro_prive, "kind");
+    TEST_CASE_EQ_STR(t, response->body.whois.user.display_name, "pro1 corp", "display name");
+    TEST_CASE_EQ_STR(t, response->body.whois.user.email, "pro@1.413", "email");
+    TEST_CASE_EQ_STR(t, response->body.whois.user.first_name, "pro1_prenom", "first name");
+    TEST_CASE_EQ_STR(t, response->body.whois.user.last_name, "pro1_nom", "last name");
 }
 
 TEST_SIGNATURE(NAME) {

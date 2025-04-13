@@ -5,10 +5,10 @@
 
 #include <assert.h>
 #include <getopt.h>
+#include <stdio.h>
 #include <tchatator413/json-helpers.h>
 #include <tchatator413/tchatator413.h>
 #include <unistd.h>
-#include <stdio.h>
 
 int tchatator413_run_interactive(cfg_t *cfg, db_t *db, int argc, char **argv) {
     json_object *const obj_input = optind < argc
@@ -34,7 +34,7 @@ int tchatator413_run_interactive(cfg_t *cfg, db_t *db, int argc, char **argv) {
     return EX_OK;
 }
 
-static inline json_object *act(json_object *const obj_action, cfg_t *cfg, db_t *db, fn_on_action_t on_action, fn_on_response_t on_response, void *on_ctx) {
+static inline json_object *act(json_object const *obj_action, cfg_t *cfg, db_t *db, fn_on_action_t on_action, fn_on_response_t on_response, void *on_ctx) {
     action_t action = action_parse(cfg, db, obj_action);
     if (on_action) on_action(&action, on_ctx);
 

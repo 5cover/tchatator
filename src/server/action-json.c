@@ -31,7 +31,7 @@ static inline serial_t get_user_id(cfg_t *cfg, db_t *db, json_object *obj_user) 
     return errstatus_error;
 }
 
-action_t action_parse(cfg_t *cfg, db_t *db, json_object *obj) {
+action_t action_parse(cfg_t *cfg, db_t *db, json_object const *obj) {
     action_t action = { 0 };
 
 #define fail()                                                              \
