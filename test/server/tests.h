@@ -41,7 +41,7 @@ void observe_put_role(void);
 #define X_TESTS(X)                              \
     X(db_verify_user_constr)                    \
     /* Integration tests (> 1 action) */        \
-    /* X(member1_send_pro1_inbox_member1_rm) */ \
+    X(member1_send_pro1_inbox_member1_rm) \
     /* Unit tests */                            \
     X(db_get_user)                              \
     /*X(admin_whois_imax)*/                     \
@@ -65,7 +65,7 @@ void observe_put_role(void);
 
 /// @brief Expands to the signature of a Tchattator413 test function
 /// @param name The unquoted name of the test.
-#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(cfg_t * cfg, db_t * db)
+#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t **pmem, cfg_t * cfg, db_t * db)
 
 #define DECLARE_TEST(name) TEST_SIGNATURE(name);
 X_TESTS(DECLARE_TEST)
@@ -75,6 +75,7 @@ X_TESTS(DECLARE_TEST)
     .t = test_start(STR(name)), \
     .cfg = cfg,                 \
     .db = db,                   \
+    .pmem = pmem,       \
 };
 
 #define OUT_JSON(NAME, suffix) "test/server/json/" STR(NAME) "/out" suffix ".json"
@@ -129,6 +130,7 @@ typedef struct {
     int n_actions, n_responses;
     cfg_t *cfg;
     db_t *db;
+    memlst_t **pmem;
 } test_t;
 _Static_assert(offsetof(test_t, t) == 0, "backing test must be at start of struct for implicit base type punning");
 

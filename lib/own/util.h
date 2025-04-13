@@ -6,10 +6,38 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <memlst.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/// @brief Safely destroys a memory list and returns a status.
+///
+/// This macro destroys the given memory list and immediately returns the specified status.
+/// It ensures proper memory cleanup before returning from a function.
+///
+/// @param mem The memory list to be destroyed.
+/// @param value The value to return after destroying the memory list.
+#define CLEAN_RETURN(mem, value) \
+    do {                          \
+        memlst_destroy(&(mem));     \
+        return (value);          \
+    } while (0)
+
+/// @brief Safely destroys a memory list and exits the program.
+///
+/// This macro destroys the given memory list and immediately exits the program
+/// with the specified status. It ensures proper memory cleanup before terminating
+/// the program.
+///
+/// @param mem The memory list to be destroyed.
+/// @param status The exit status value to use when terminating the program.
+#define CLEAN_EXIT(mem, status) \
+    do {                        \
+        memlst_destroy(&(mem));   \
+        exit(status);           \
+    } while (0)
 
 /// @brief Quote.
 #define QUOTE(name) #name

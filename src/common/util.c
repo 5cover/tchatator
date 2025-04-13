@@ -3,9 +3,9 @@
 /// @brief Tchatator413 miscaelannous utilities - Implementation
 /// @date 1/02/2025
 
+#include "util.h"
 #include <limits.h>
 #include <stdarg.h>
-#include <tchatator413/util.h>
 #include <sysexits.h>
 
 char *strfmt(const char *fmt, ...) {

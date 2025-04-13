@@ -6,12 +6,13 @@
 #include <assert.h>
 #include <getopt.h>
 #include <json-c.h>
+#include <memlst.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <tchatator413/cfg.h>
 #include <tchatator413/json-helpers.h>
 #include <tchatator413/tchatator413.h>
-#include <tchatator413/util.h>
+#include "util.h"
 #include <unistd.h>
 
 /* to run it
@@ -29,13 +30,15 @@ int main(int argc, char **argv) {
     int verbosity = 0;
     bool dump_config = false, interactive = false;
 
-    cfg_t *cfg = cfg_defaults();
+    memlst_t *mem = memlst_init();
+
+    cfg_t *cfg = memlst_add(&mem, (fn_dtor_t)cfg_destroy, cfg_defaults());
 
     {
         api_key_t root_api_key;
         if (!uuid4_parse(&root_api_key, require_env(cfg, "ROOT_API_KEY"))) {
             cfg_log(cfg, log_error, "invalid ROOT_API_KEY\n");
-            return EX_USAGE;
+            CLEAN_RETURN(mem, EX_USAGE);
         }
         cfg_load_root_credentials(cfg, root_api_key, require_env(cfg, "ROOT_PASSWORD"));
     }
@@ -88,10 +91,10 @@ int main(int argc, char **argv) {
             switch (opt) {
             case opt_help:
                 puts(HELP);
-                return EXIT_SUCCESS;
+                CLEAN_RETURN(mem, EX_OK);
             case opt_version:
                 puts(VERSION);
-                return EXIT_SUCCESS;
+                CLEAN_RETURN(mem, EX_OK);
             case opt_dump_config:
                 dump_config = true;
                 break;
@@ -101,13 +104,13 @@ int main(int argc, char **argv) {
             case opt_config:
                 if (cfg) {
                     cfg_log(cfg, log_error, "config already specified by previous argument\n");
-                    return EX_USAGE;
+                    CLEAN_RETURN(mem, EX_USAGE);
                 }
                 cfg_load_from_file(cfg, optarg);
                 break;
             case '?':
                 puts(HELP);
-                return EX_USAGE;
+                CLEAN_RETURN(mem, EX_USAGE);
             }
         }
     }
@@ -118,24 +121,17 @@ int main(int argc, char **argv) {
 
     if (dump_config) {
         cfg_dump(cfg);
-        result = EX_OK;
-    } else {
-        db_t *db = db_connect(cfg,
+        CLEAN_RETURN(mem, EX_OK);
+    }
+
+    db_t *db = memlst_add(&mem, (fn_dtor_t)db_destroy,
+        db_connect(cfg,
             require_env(cfg, "DB_HOST"),
             require_env(cfg, "DB_PORT"),
             require_env(cfg, "DB_NAME"),
             require_env(cfg, "DB_USER"),
-            require_env(cfg, "DB_PASSWORD"));
-        if (!db) return EX_NODB;
+            require_env(cfg, "DB_PASSWORD")));
+    if (!db) CLEAN_RETURN(mem, EX_NODB);
 
-        result = interactive
-            ? tchatator413_run_interactive(cfg, db, argc, argv)
-            : tchatator413_run_socket(cfg, db);
-
-        db_destroy(db);
-    }
-
-    cfg_destroy(cfg);
-
-    return result;
+    CLEAN_RETURN(mem, interactive ? tchatator413_run_interactive(cfg, db, argc, argv) : tchatator413_run_socket(cfg, db));
 }

@@ -16,8 +16,6 @@ typedef void db_t;
 /// @brief Represents a user in the system.
 /// @details This struct contains the various fields that make up a user's profile, such as their ID, kind, email, names, and display name.
 typedef struct {
-    /// @brief Handle to the database memory owner.
-    void *memory_owner_db;
     serial_t id;
     /// @brief A single role that tags the user information.
     role_t role;
@@ -35,7 +33,10 @@ typedef struct {
 
 /// @brief Represents a list of messages.
 /// @details This struct contains a pointer to an array of messages and the number of messages in the array.
-typedef struct msg_list msg_list_t;
+typedef struct {
+    size_t n_msgs;
+    msg_t *msgs;
+} msg_list_t;
 
 /// @brief Initialize a database connection.
 /// @param cfg The configuration.
@@ -51,11 +52,6 @@ db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *dat
 /// @brief Destroy a database connection.
 /// @param db The database connection to destroy. No-op if @c NULL.
 void db_destroy(db_t *db);
-
-/// @brief Cleans up a memory owner.
-/// @param memory_owner The memory owner to clean up.
-/// @note @c NULL is no-op.
-void db_collect(void *memory_owner);
 
 /// @brief Verify a connection string.
 /// @param db The database.
@@ -87,22 +83,23 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, char const *name);
 
 /// @brief Fills a user record from its ID. If @p user->id is undefined, the behavior is undefined.
 /// @param db The database.
+/// @param pmem Parent memory owner.
 /// @param cfg The configuration.
 /// @param user The user record to fill.
 /// @return @ref errstatus_handled A database error occured. A message has been shown. @p user is untouched.
 /// @return @ref errstatus_error No user of ID @p user->id exists in the database. @p user is untouched.
 /// @return @ref errstatus_ok Success.
-errstatus_t db_get_user(db_t *db, cfg_t *cfg, user_t *user);
+errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *user);
 
 /// @brief Retrieves a message from the database. If @p msg->id is undefined, the behavior is undefined.
 /// @param db The database.
+/// @param pmem Parent memory owner.
 /// @param cfg The configuration.
 /// @param msg The message to be filled with the retrieved data.
-/// @param out_memory_owner_db Assigned to the owner of the memory allocated for the message data.
 /// @return @ref errstatus_ok The message was successfully retrieved.
 /// @return @ref errstatus_error The message could not be retrieved. No message of ID @p msg->id exists in the database.
-/// @return @ref errstatus_handled A database error occured. A message has been shown. @p msg and @p out_memory_owner_db are untouched.
-errstatus_t db_get_msg(db_t *db, cfg_t *cfg, msg_t *msg, void **out_memory_owner_db);
+/// @return @ref errstatus_handled A database error occured. A message has been shown. @p msg is untouched.
+errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *msg);
 
 /// @brief Check a password against the stored hash for an user.
 /// @param db The database.
@@ -145,16 +142,20 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
 
 /// @brief Creates an array with the messages an user has recieved, sorted by sent/edited date, in reverse chronological order.
 /// @param db The database.
+/// @param pmem Parent memory owner.
 /// @param cfg The configuration.
 /// @param limit The maximum number of messages to fetch.
 /// @param offset The offset of the query.
+/// @param out_msgs Assigned to the inbox message list.
 /// @param recipient_id The ID of the user who recieved the messages.
-/// @return A message list, or @c NULL on error.
+/// @return @ref errstatus_ok On success.
+/// @return @ref errstatus_handled A database error occured. A message has been shown. @p out_user is untouched.
 /// @remark The returned msg_list is owned by the caller.
-msg_list_t *db_get_inbox(db_t *db, cfg_t *cfg,
+errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
     int32_t limit,
     int32_t offset,
-    serial_t recipient_id);
+    serial_t recipient_id,
+    msg_list_t *out_msgs);
 
 /// @brief Removes a message from the database.
 /// @param db The database.
@@ -177,22 +178,5 @@ typedef errstatus_t (*fn_transaction_t)(db_t *db, cfg_t *cfg, void *ctx);
 /// @param ctx The context to pass to @p {body}. Can be @c {NULL}.
 /// @return The error status of @p {body}, or of the BEGIN, COMMIT or ROLLBACK action if they weren't successful.
 errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ctx);
-
-// msg_list
-
-/// Destroys a message list, freeing its associated memory.
-/// @param msg_list The message list to be destroyed.
-void msg_list_destroy(msg_list_t *msg_list);
-
-/// Returns the number of messages in the message list.
-/// @param msg_list The message list to get the length of.
-/// @return Number of messages in the list.
-size_t msg_list_len(msg_list_t *msg_list);
-
-/// Retrieves a message at the specified index from a message list.
-/// @param msg_list The message list to retrieve the message from.
-/// @param i The index of the message to retrieve.
-/// @return A constant pointer to the message at the specified index.
-msg_t const *msg_list_at(msg_list_t *msg_list, size_t i);
 
 #endif // DB_H

@@ -10,6 +10,7 @@
 #include "cfg.h"
 #include "db.h"
 #include <json-c.h>
+#include <memlst.h>
 
 /// @brief An event handler for when the server has parsed an action.
 typedef void (*fn_on_action_t)(const action_t *action, void *ctx);

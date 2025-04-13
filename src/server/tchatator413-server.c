@@ -185,10 +185,9 @@ int tchatator413_run_socket(cfg_t *cfg, db_t *db) {
                 ntohs(addr_connection.sin_port),
                 fd);
             response_t r = response_for_rate_limit(next_request_at);
-            json_object *response = response_to_json(&r);
-            json_object_write(response, cfg, fd);
-            json_object_put(response);
-            response_destroy(&r);
+            json_object *resp = response_to_json(&r);
+            json_object_write(resp, cfg, fd);
+            json_object_put(resp);
         }
 
         cfg_log(cfg, log_info, "closing connection fd %d\n", fd);

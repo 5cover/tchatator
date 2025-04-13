@@ -1,3 +1,4 @@
+#include "util.h"
 #include <arpa/inet.h>
 #include <json-c/json.h>
 #include <stdio.h>
@@ -154,9 +155,8 @@ json_object *send_request(json_object *obj) {
     int sockfd;
     struct sockaddr_in server_addr;
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("Erreur de création du socket");
-        exit(EXIT_FAILURE);
+    if (-1 == (sockfd = socket(AF_INET, SOCK_STREAM, 0))) {
+        errno_exit("socket");
     }
 
     server_addr.sin_family = AF_INET;

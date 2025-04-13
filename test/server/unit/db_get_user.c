@@ -13,24 +13,20 @@ TEST_SIGNATURE(NAME) {
 
     {
         user_t user = { .id = 1 };
-        db_get_user(db, cfg, &user);
+        db_get_user(db, test.pmem, cfg, &user);
 
         TEST_CASE_EQ_INT(&test.t, user.id, 1, );
         TEST_CASE_EQ_INT(&test.t, user.role, role_pro, );
         TEST_CASE_EQ_STR(&test.t, user.pro.business_name, "pro1 corp", );
-
-        db_collect(user.memory_owner_db);
     }
 
     {
         user_t user = { .id = 3 };
-        db_get_user(db, cfg, &user);
+        db_get_user(db, test.pmem, cfg, &user);
 
         TEST_CASE_EQ_INT(&test.t, user.id, 3, );
         TEST_CASE_EQ_INT(&test.t, user.role, role_member, );
         TEST_CASE_EQ_STR(&test.t, user.member.user_name, "member1", );
-
-        db_collect(user.memory_owner_db);
     }
 
     return test.t;

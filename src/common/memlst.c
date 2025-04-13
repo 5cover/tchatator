@@ -1,14 +1,19 @@
 #include "memlst.h"
 #include <assert.h>
+#include <json-c.h>
 #include <stb_ds.h>
 
 struct memlst {
     void *ptr;
-    fn_destructor_t dtor;
+    fn_dtor_t dtor;
 };
 
 memlst_t *memlst_init() {
     return NULL;
+}
+
+void dtor_json_object(void *json_object) {
+    json_object_put(json_object);
 }
 
 void memlst_destroy(memlst_t **memlst) {
@@ -16,13 +21,13 @@ void memlst_destroy(memlst_t **memlst) {
     arrfree(*memlst);
 }
 
-void *memlst_add(memlst_t *restrict *restrict memlst, void *restrict ptr, fn_destructor_t dtor) {
+void *memlst_add(memlst_t *restrict *restrict memlst, fn_dtor_t dtor, void *restrict ptr) {
     if (!ptr) return NULL;
 
 #ifndef NDEBUG
-        for (ptrdiff_t i = 0; i < arrlen(*memlst); ++i) {
-            assert((*memlst)[i].ptr != ptr);
-        }
+    for (ptrdiff_t i = 0; i < arrlen(*memlst); ++i) {
+        assert((*memlst)[i].ptr != ptr);
+    }
 #endif // NDEBUG
 
     arrput(*memlst, ((memlst_t) {

@@ -6,7 +6,7 @@
 #include "strings.h"
 #include "tests.h"
 #include <tchatator413/errstatus.h>
-#include <tchatator413/util.h>
+#include "util.h"
 #include <tchatator413/uuid.h>
 
 struct test test_uuid4(void) {

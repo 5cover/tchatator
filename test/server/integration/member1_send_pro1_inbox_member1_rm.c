@@ -47,14 +47,14 @@ static void on_action(action_t const *action, void *t) {
 }
 
 static void on_response(response_t const *response, void *t) {
-    test_t const *test = base_on_response(t);
+    test_t *test = base_on_response(t);
     test_case(t, !response->has_next_page, "");
     switch (test->n_responses) {
     case 1: { // send
         if (!TEST_CASE_EQ_INT(t, response->type, action_type_send, )) return;
-        void *memory_owner_db;
+
         msg_t msg = { .id = response->body.send.msg_id };
-        if (!test_case(t, errstatus_ok == db_get_msg(test->db, test->cfg, &msg, &memory_owner_db), "sent msg id %d exists", msg.id)) return;
+        if (!test_case(t, errstatus_ok == db_get_msg(test->db, test->pmem, test->cfg, &msg), "sent msg id %d exists", msg.id)) return;
         gs_msg_id = msg.id;
         gs_msg_sent_at = msg.sent_at;
         TEST_CASE_EQ_INT(t, msg.read_age, 0, );
@@ -63,13 +63,12 @@ static void on_response(response_t const *response, void *t) {
         TEST_CASE_EQ_INT(t, msg.user_id_sender, USER_ID_MEMBER1, );
         TEST_CASE_EQ_INT(t, msg.user_id_recipient, USER_ID_PRO1, );
         TEST_CASE_EQ_STR(t, msg.content, MSG_CONTENT, );
-        db_collect(memory_owner_db);
         break;
     }
     case 2: { // inbox
         if (!TEST_CASE_EQ_INT(t, response->type, action_type_inbox, )) return;
-        if (!TEST_CASE_EQ_INT64(t, msg_list_len(response->body.inbox), 1, )) return;
-        msg_t const *msg = msg_list_at(response->body.inbox, 0);
+        if (!TEST_CASE_EQ_INT64(t, response->body.inbox.n_msgs, 1, )) return;
+        msg_t const *msg = &response->body.inbox.msgs[0];
         TEST_CASE_EQ_INT(t, msg->id, gs_msg_id, );
         TEST_CASE_EQ_INT64(t, msg->sent_at, gs_msg_sent_at, );
         TEST_CASE_EQ_INT(t, msg->read_age, 0, );
@@ -96,16 +95,15 @@ TEST_SIGNATURE(NAME) {
 
     // Member sends message
     {
-        json_object *obj_input = load_jsonf(IN_JSONF(NAME, "_send"), API_KEY_MEMBER1 "¤member1_mdp");
-        json_object *obj_output = tchatator413_interpret(obj_input, cfg, db, on_action, on_response, &test);
+        json_object *obj_input = memlst_add(test.pmem, dtor_json_object,
+            load_jsonf(IN_JSONF(NAME, "_send"), API_KEY_MEMBER1 "¤member1_mdp"));
+        json_object *obj_output = memlst_add(test.pmem, dtor_json_object,
+            tchatator413_interpret(obj_input, cfg, db, on_action, on_response, &test));
 
         test_case_n_actions(&test, 1);
-        json_object *obj_expected_output = load_jsonf(OUT_JSONF(NAME, "_send"), gs_msg_id);
+        json_object *obj_expected_output = memlst_add(test.pmem, dtor_json_object,
+            load_jsonf(OUT_JSONF(NAME, "_send"), gs_msg_id));
         if (!test_output_json(&test.t, obj_output, obj_expected_output)) return test.t;
-        json_object_put(obj_expected_output);
-
-        json_object_put(obj_input);
-        json_object_put(obj_output);
     }
 
     // Pro queries inbox

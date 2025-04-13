@@ -5,7 +5,7 @@
 
 #include "tchatator413/cfg.h"
 #include "tchatator413/json-helpers.h"
-#include "tchatator413/util.h"
+#include "util.h"
 #include "tchatator413/uuid.h"
 #include <bcrypt/bcrypt.h>
 #include <errno.h>

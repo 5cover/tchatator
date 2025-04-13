@@ -8,12 +8,13 @@
 #include <tchatator413/const.h>
 #include <tchatator413/errstatus.h>
 #include <tchatator413/json-helpers.h>
-#include <tchatator413/util.h>
+#include "util.h"
 
 /// @return @ref serial_t The user ID.
 /// @return @ref errstatus_handled An error occured and was handled.
 /// @return @ref errstatus_error Invalid user key.
-static inline serial_t get_user_id(cfg_t *cfg, db_t *db, json_object *obj_user) {
+static inline serial_t
+get_user_id(cfg_t *cfg, db_t *db, json_object *obj_user) {
     switch (json_object_get_type(obj_user)) {
     case json_type_int: {
         serial_t maybe_user_id = json_object_get_int(obj_user);
@@ -31,7 +32,9 @@ static inline serial_t get_user_id(cfg_t *cfg, db_t *db, json_object *obj_user) 
     return errstatus_error;
 }
 
-action_t action_parse(cfg_t *cfg, db_t *db, json_object const *obj) {
+action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *obj) {
+    // json_object internal memory is not considered stable enough to reuse outside of this function, so we must duplicate extracted pointers (such as strings).
+
     action_t action = { 0 };
 
 #define fail()                                                              \
@@ -80,27 +83,43 @@ action_t action_parse(cfg_t *cfg, db_t *db, json_object const *obj) {
         }                                                      \
     } while (0)
 
-#define getarg_string(obj, key, out_value) getarg(obj, key, out_value, json_type_string, json_object_get_string_strict)
 #define getarg_int(obj, key, out_value) getarg(obj, key, out_value, json_type_int, json_object_get_int_strict)
 #define getarg_int64(obj, key, out_value) getarg(obj, key, out_value, json_type_int, json_object_get_int64_strict)
+#define getarg_string(obj, key, out_value)                         \
+    do {                                                           \
+        if (!json_object_object_get_ex(obj_with, key, &obj)) {     \
+            fail_missing_key(arg_loc(key));                        \
+        }                                                          \
+        if (!json_object_get_string_strict(obj, out_value)) {      \
+            fail_type(arg_loc(key), obj, json_type_string);        \
+        }                                                          \
+        if (!((out_value)->val = memlst_add(pmem, free,            \
+                  strndup((out_value)->val, (out_value)->len)))) { \
+            errno_exit("strdup");                                  \
+        }                                                          \
+    } while (0)
 #define DELIMITER "¤"
-#define getarg_constr(obj, key, out_value)                                                  \
-    do {                                                                                    \
-        if (!json_object_object_get_ex(obj_with, key, &obj)) {                              \
-            fail_missing_key(arg_loc(key));                                                 \
-        }                                                                                   \
-        slice_t constr;                                                                     \
-        if (!json_object_get_string_strict(obj, &constr)) {                                 \
-            fail_type(arg_loc(key), obj, json_type_string);                                 \
-        }                                                                                   \
-        if (!uuid4_parse_slice(&(out_value)->api_key, constr)) {                            \
-            fail_invalid(arg_loc(key), obj, "invalid API key");                             \
-        }                                                                                   \
-        (out_value)->password                                                               \
-            = constr.len >= UUID4_REPR_LENGTH + sizeof DELIMITER - 1                        \
-                && strneq(constr.val + UUID4_REPR_LENGTH, DELIMITER, sizeof DELIMITER - 1) \
-            ? constr.val + UUID4_REPR_LENGTH + sizeof DELIMITER - 1                         \
-            : NULL;                                                                          \
+#define getarg_constr(obj, key, out_value)                                                \
+    do {                                                                                  \
+        if (!json_object_object_get_ex(obj_with, key, &obj)) {                            \
+            fail_missing_key(arg_loc(key));                                               \
+        }                                                                                 \
+        slice_t constr;                                                                   \
+        if (!json_object_get_string_strict(obj, &constr)) {                               \
+            fail_type(arg_loc(key), obj, json_type_string);                               \
+        }                                                                                 \
+        if (!uuid4_parse_slice(&(out_value)->api_key, constr)) {                          \
+            fail_invalid(arg_loc(key), obj, "invalid API key");                           \
+        }                                                                                 \
+        if (constr.len >= UUID4_REPR_LENGTH + sizeof DELIMITER - 1                        \
+            && strneq(constr.val + UUID4_REPR_LENGTH, DELIMITER, sizeof DELIMITER - 1)) { \
+            if (!((out_value)->password = memlst_add(pmem, free,                          \
+                      strdup(constr.val + UUID4_REPR_LENGTH + sizeof DELIMITER - 1)))) {  \
+                errno_exit("strdup");                                                     \
+            }                                                                             \
+        } else {                                                                          \
+            (out_value)->password = NULL;                                                 \
+        }                                                                                 \
     } while (0)
 
 #define getarg_user(obj, key, out_value)                                           \
@@ -350,8 +369,8 @@ json_object *response_to_json(response_t *response) {
     case action_type_inbox: {
         obj_body = json_object_new_array();
 
-        for (size_t i = 0; i < msg_list_len(response->body.inbox); ++i) {
-            json_object_array_add(obj_body, msg_to_json_object(msg_list_at(response->body.inbox, i)));
+        for (size_t i = 0; i < response->body.inbox.n_msgs; ++i) {
+            json_object_array_add(obj_body, msg_to_json_object(&response->body.inbox.msgs[i]));
         }
         break;
     }

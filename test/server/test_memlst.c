@@ -11,7 +11,7 @@
 #include <fcntl.h>
 
 #ifdef NDEBUG
-#error the memlst test cannot be run with NDEBUG since it requires assertions to run.S
+#error the memlst test cannot be run with NDEBUG since it requires assertions to run.
 #endif
 
 static int gs_ncalls_testfree = 0;
@@ -63,10 +63,10 @@ struct test test_memlst(void) {
     assert(ptr);
 
     // First add
-    test_case(&t, memlst_add(&memlst, ptr, testfree) == ptr, "first add");
+    test_case(&t, memlst_add(&memlst, testfree, ptr) == ptr, "first add");
 
     // Duplicate pointer: asserts
-    test_expect_sigabrt(t, memlst_add(&memlst, ptr, testfree));
+    test_expect_sigabrt(t, memlst_add(&memlst, testfree, ptr));
 
     // Collect of 1
     memlst_collect(&memlst);
@@ -81,8 +81,8 @@ struct test test_memlst(void) {
     ptr = malloc(100);
     void *ptr1 = malloc(50);
 
-    test_case(&t, memlst_add(&memlst, ptr, testfree) == ptr, "");
-    test_case(&t, memlst_add(&memlst, ptr1, testfree) == ptr1, "");
+    test_case(&t, memlst_add(&memlst, testfree, ptr) == ptr, "");
+    test_case(&t, memlst_add(&memlst, testfree, ptr1) == ptr1, "");
 
     // destruction: should collect of 2 too. order of cleanup is not specified.
     memlst_destroy(&memlst);

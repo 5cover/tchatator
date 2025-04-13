@@ -5,7 +5,7 @@
 
 #include "tchatator413/db.h"
 #include "tchatator413/cfg.h"
-#include "tchatator413/util.h"
+#include "util.h"
 #include <assert.h>
 #include <bcrypt/bcrypt.h>
 #include <byteswap.h>
@@ -46,12 +46,6 @@
 #define log_fmt_pq(db) "database: %s\n", PQerrorMessage(db)
 #define log_fmt_pq_result(result) "database: %s\n", PQresultErrorMessage(result)
 
-struct msg_list {
-    void *memory_owner_db;
-    size_t n_msgs;
-    msg_t msgs[];
-};
-
 db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *database, char const *username, char const *password) {
     PGconn *db = PQsetdbLogin(
         host,
@@ -84,10 +78,6 @@ db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *dat
 
 void db_destroy(db_t *db) {
     PQfinish(db);
-}
-
-void db_collect(void *memory_owner) {
-    PQclear(memory_owner);
 }
 
 static inline bool check_password(char const *password, char const hash[BCRYPT_HASHSIZE]) {
@@ -125,8 +115,8 @@ errstatus_t db_verify_user_constr(db_t *db, cfg_t *cfg, user_identity_t *out_use
 
     // todo: remove debug loggin
 
-    //fprintf(stderr, "[debug] about to call PQexecParams with api_key_repr = \"%s\"\n", api_key_repr);
-    //fprintf(stderr, "[debug] args = %p args[0] = %p (%s)\n", (void const *)args, (void const *)args[0], args[0]);
+    // fprintf(stderr, "[debug] about to call PQexecParams with api_key_repr = \"%s\"\n", api_key_repr);
+    // fprintf(stderr, "[debug] args = %p args[0] = %p (%s)\n", (void const *)args, (void const *)args[0], args[0]);
 
     PGresult *result = PQexecParams(db, "select role,password_hash,user_id from " TBL_USER " where api_key=$1",
         1, NULL, args, NULL, NULL, 1);
@@ -230,44 +220,38 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
     return res;
 }
 
-errstatus_t db_get_user(db_t *db, cfg_t *cfg, user_t *out_user) {
+errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *out_user) {
     uint32_t const arg1 = pq_send_l(out_user->id);
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "select role,user_id,member_user_name,pro_business_name from " TBL_USER " where user_id=$1",
-        array_len(args), NULL, args, args_len, args_fmt, 1);
-
-    errstatus_t res;
+    PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
+        PQexecParams(db, "select role,user_id,member_user_name,pro_business_name from " TBL_USER " where user_id=$1",
+            array_len(args), NULL, args, args_len, args_fmt, 1));
 
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         cfg_log(cfg, log_error, log_fmt_pq_result(result));
-        res = errstatus_handled;
-    } else if (PQntuples(result) == 0) {
-        res = errstatus_error;
-    } else {
-        out_user->memory_owner_db = result;
-        out_user->role = pq_recv_l(role_t, PQgetvalue(result, 0, 0));
-        out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 1));
-        switch (out_user->role) {
-        case role_admin:
-            // don't call PQClear -- since we need the caller to have access to the memory for string data.
-            // we abstract it behind out_user->memory_owner_db and let them call db_cleanup themselves.
-            return errstatus_ok;
-        case role_member:
-            out_user->member.user_name = PQgetvalue(result, 0, 2);
-            return errstatus_ok;
-        case role_pro:
-            out_user->pro.business_name = PQgetvalue(result, 0, 3);
-            return errstatus_ok;
-        default:
-            cfg_log_incorrect_role(cfg, out_user->role);
-            res = errstatus_handled;
-        }
+        return errstatus_handled;
+    }
+    if (PQntuples(result) == 0) {
+        return errstatus_error;
     }
 
-    PQclear(result);
-    return res;
+    out_user->role = pq_recv_l(role_t, PQgetvalue(result, 0, 0));
+    out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 1));
+    switch (out_user->role) {
+    case role_admin:
+        return errstatus_ok;
+    case role_member:
+        out_user->member.user_name = PQgetvalue(result, 0, 2);
+        return errstatus_ok;
+    case role_pro:
+        out_user->pro.business_name = PQgetvalue(result, 0, 3);
+        return errstatus_ok;
+    default:
+        cfg_log_incorrect_role(cfg, out_user->role);
+        return errstatus_handled;
+    }
 }
 
 int db_count_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipient_id) {
@@ -313,32 +297,31 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
     return res;
 }
 
-msg_list_t *db_get_inbox(db_t *db, cfg_t *cfg,
+errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
     int32_t limit,
     int32_t offset,
-    serial_t recipient_id) {
+    serial_t recipient_id,
+    msg_list_t *out_msgs) {
+
     uint32_t const arg1 = pq_send_l(recipient_id), arg2 = pq_send_l(limit), arg3 = pq_send_l(offset);
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2, (char const *)&arg3 };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2, sizeof arg3 };
     int const args_fmt[array_len(args)] = { 1, 1, 1 };
-    PGresult *result = PQexecParams(db, "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_INBOX " where user_id_recipient=$1 limit $2::int offset $3::int",
-        array_len(args), NULL, args, args_len, args_fmt, 1);
+    PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
+        PQexecParams(db, "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_INBOX " where user_id_recipient=$1 limit $2::int offset $3::int",
+            array_len(args), NULL, args, args_len, args_fmt, 1));
 
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         cfg_log(cfg, log_error, log_fmt_pq_result(result));
-        PQclear(result);
-        return NULL;
+        return errstatus_handled;
     }
 
     int32_t ntuples = MIN(PQntuples(result), limit);
-    msg_list_t *msg_list = malloc(sizeof *msg_list + sizeof *msg_list->msgs * ntuples);
-    if (!msg_list) errno_exit("malloc");
-
-    msg_list->memory_owner_db = result;
-    msg_list->n_msgs = (size_t)ntuples;
-
+    out_msgs->msgs = memlst_add(pmem, free, malloc(sizeof *out_msgs->msgs * ntuples));
+    if (!out_msgs->msgs) errno_exit("malloc");
+    out_msgs->n_msgs = (size_t)ntuples;
     for (int32_t i = 0; i < ntuples; ++i) {
-        msg_t *m = &msg_list->msgs[i];
+        msg_t *m = &out_msgs->msgs[i];
         m->id = pq_recv_l(serial_t, PQgetvalue(result, i, 0));
         m->content = PQgetvalue(result, i, 1);
         m->sent_at = pq_recv_timestamp(PQgetvalue(result, i, 2));
@@ -349,38 +332,34 @@ msg_list_t *db_get_inbox(db_t *db, cfg_t *cfg,
         m->user_id_recipient = recipient_id;
     }
 
-    return msg_list;
+    return errstatus_ok;
 }
 
-errstatus_t db_get_msg(db_t *db, cfg_t *cfg, msg_t *msg, void **out_memory_owner_db) {
+errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *msg) {
     uint32_t const arg1 = pq_send_l(msg->id);
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, user_id_recipient from " TBL__MSG " where msg_id=$1",
-        array_len(args), NULL, args, args_len, args_fmt, 1);
-
-    errstatus_t res;
+    PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
+        PQexecParams(db, "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, user_id_recipient from " TBL__MSG " where msg_id=$1",
+            array_len(args), NULL, args, args_len, args_fmt, 1));
 
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         cfg_log(cfg, log_error, log_fmt_pq_result(result));
-        res = errstatus_handled;
-    } else if (PQntuples(result) == 0) {
-        res = errstatus_error;
-    } else {
-        msg->content = PQgetvalue(result, 0, 0);
-        msg->sent_at = pq_recv_timestamp(PQgetvalue(result, 0, 1));
-        msg->read_age = PQgetisnull(result, 0, 2) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 2));
-        msg->edited_age = PQgetisnull(result, 0, 3) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 3));
-        msg->deleted_age = PQgetisnull(result, 0, 4) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 4));
-        msg->user_id_sender = PQgetisnull(result, 0, 5) ? 0 : pq_recv_l(serial_t, PQgetvalue(result, 0, 5));
-        msg->user_id_recipient = pq_recv_l(serial_t, PQgetvalue(result, 0, 6));
-        *out_memory_owner_db = result;
-        return errstatus_ok;
+        return errstatus_handled;
+    }
+    if (PQntuples(result) == 0) {
+        return errstatus_error;
     }
 
-    PQclear(result);
-    return res;
+    msg->content = PQgetvalue(result, 0, 0);
+    msg->sent_at = pq_recv_timestamp(PQgetvalue(result, 0, 1));
+    msg->read_age = PQgetisnull(result, 0, 2) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 2));
+    msg->edited_age = PQgetisnull(result, 0, 3) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 3));
+    msg->deleted_age = PQgetisnull(result, 0, 4) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 4));
+    msg->user_id_sender = PQgetisnull(result, 0, 5) ? 0 : pq_recv_l(serial_t, PQgetvalue(result, 0, 5));
+    msg->user_id_recipient = pq_recv_l(serial_t, PQgetvalue(result, 0, 6));
+    return errstatus_ok;
 }
 
 errstatus_t db_rm_msg(db_t *db, cfg_t *cfg, serial_t msg_id) {
@@ -433,17 +412,4 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ct
     PQclear(result);
 
     return res;
-}
-
-void msg_list_destroy(msg_list_t *msg_list) {
-    db_collect(msg_list->memory_owner_db);
-    free(msg_list);
-}
-
-size_t msg_list_len(msg_list_t *msg_list) {
-    return msg_list->n_msgs;
-}
-
-msg_t const *msg_list_at(msg_list_t *msg_list, size_t i) {
-    return &msg_list->msgs[i];
 }

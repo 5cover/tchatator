@@ -13,7 +13,6 @@
 #define OUT stdout
 
 int main(void) {
-
     struct test t;
     bool success = true;
 
@@ -26,28 +25,33 @@ int main(void) {
     test(test_uuid4());
     test(test_memlst());
 
-    cfg_t *cfg = cfg_defaults();
+    // probably a bad idea to proceed if uuid4 or memlst are bad
+    if (!success) return EXIT_FAILURE;
+
+    memlst_t *mem = memlst_init();
+
+    cfg_t *cfg = memlst_add(&mem, (fn_dtor_t)cfg_destroy, cfg_defaults());
     cfg_set_verbosity(cfg, INT_MAX);
 
     {
         api_key_t root_api_key;
         if (!uuid4_parse(&root_api_key, require_env(cfg, "ROOT_API_KEY"))) {
             cfg_log(cfg, log_error, "invalid ROOT_API_KEY\n");
-            return EX_USAGE;
+            CLEAN_RETURN(mem, EX_USAGE);
         }
         cfg_load_root_credentials(cfg, root_api_key, require_env(cfg, "ROOT_PASSWORD"));
     }
 
-    db_t *db = db_connect(cfg,
-        require_env(cfg, "DB_HOST"),
-        require_env(cfg, "DB_PORT"),
-        require_env(cfg, "DB_NAME"),
-        require_env(cfg, "DB_USER"),
-        require_env(cfg, "DB_PASSWORD"));
+    db_t *db = memlst_add(&mem, (fn_dtor_t)db_destroy,
+        db_connect(cfg,
+            require_env(cfg, "DB_HOST"),
+            require_env(cfg, "DB_PORT"),
+            require_env(cfg, "DB_NAME"),
+            require_env(cfg, "DB_USER"),
+            require_env(cfg, "DB_PASSWORD")));
+    if (!db) CLEAN_RETURN(mem, EX_NODB);
 
-    if (!db) return EX_NODB;
-
-#define CALL_TEST(name) test(test_tchatator413_##name(cfg, db));
+#define CALL_TEST(name) test(test_tchatator413_##name(&mem, cfg, db));
     X_TESTS(CALL_TEST)
 #undef CALL_TEST
 
@@ -55,8 +59,5 @@ int main(void) {
     observe_put_role();
 #endif
 
-    cfg_destroy(cfg);
-    db_destroy(db);
-
-    return success ? EXIT_SUCCESS : EXIT_FAILURE;
+    CLEAN_RETURN(mem, success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

@@ -7,25 +7,6 @@
 #include <limits.h>
 #include <tchatator413/action.h>
 #include <tchatator413/db.h>
-#include <tchatator413/util.h>
-
-void response_destroy(response_t *response) {
-    switch (response->type) {
-    case action_type_whois:
-        db_collect(response->body.whois.user.memory_owner_db);
-        break;
-    case action_type_motd:
-        msg_list_destroy(response->body.motd);
-        break;
-    case action_type_inbox:
-        msg_list_destroy(response->body.motd);
-        break;
-    case action_type_outbox:
-        msg_list_destroy(response->body.motd);
-        break;
-    default:;
-    }
-}
 
 response_t response_for_rate_limit(time_t next_request_at) {
     return (response_t) {
@@ -38,7 +19,7 @@ response_t response_for_rate_limit(time_t next_request_at) {
     };
 }
 
-response_t action_evaluate(action_t const *action, cfg_t *cfg, db_t *db) {
+response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, db_t *db) {
     response_t rep = { 0 };
 
 #define fail(return_status)                               \
@@ -77,7 +58,7 @@ response_t action_evaluate(action_t const *action, cfg_t *cfg, db_t *db) {
         }
 
         rep.body.DO.user.id = action->with.DO.user_id;
-        switch (db_get_user(db, cfg, &rep.body.DO.user)) {
+        switch (db_get_user(db, pmem, cfg, &rep.body.DO.user)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_not_found);
         default:;
@@ -135,10 +116,7 @@ response_t action_evaluate(action_t const *action, cfg_t *cfg, db_t *db) {
         default: check_role(role_all);
         }
 
-        if (!(rep.body.DO = db_get_inbox(db, cfg,
-                  cfg_page_inbox(cfg),
-                  cfg_page_inbox(cfg) * (action->with.DO.page - 1),
-                  user.id))) {
+        if (errstatus_ok != db_get_inbox(db, pmem, cfg, cfg_page_inbox(cfg), cfg_page_inbox(cfg) * (action->with.DO.page - 1), user.id, &rep.body.DO)) {
             fail(status_internal_server_error);
         }
         break;
