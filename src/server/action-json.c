@@ -84,20 +84,23 @@ action_t action_parse(cfg_t *cfg, db_t *db, json_object *obj) {
 #define getarg_int(obj, key, out_value) getarg(obj, key, out_value, json_type_int, json_object_get_int_strict)
 #define getarg_int64(obj, key, out_value) getarg(obj, key, out_value, json_type_int, json_object_get_int64_strict)
 #define DELIMITER "¤"
-#define getarg_constr(obj, key, out_value)                                          \
-    do {                                                                            \
-        if (!json_object_object_get_ex(obj_with, key, &obj)) {                      \
-            fail_missing_key(arg_loc(key));                                         \
-        }                                                                           \
-        slice_t constr;                                                             \
-        if (!json_object_get_string_strict(obj, &constr)) {                         \
-            fail_type(arg_loc(key), obj, json_type_string);                         \
-        }                                                                           \
-        if (!uuid4_parse_slice(&(out_value)->api_key, constr)) {                    \
-            fail_invalid(arg_loc(key), obj, "invalid API key");                     \
-        }                                                                           \
-        (out_value)->password = strstr(constr.val, DELIMITER);                      \
-        if (!(out_value)->password) (out_value)->password += sizeof(DELIMITER) - 1; \
+#define getarg_constr(obj, key, out_value)                                                  \
+    do {                                                                                    \
+        if (!json_object_object_get_ex(obj_with, key, &obj)) {                              \
+            fail_missing_key(arg_loc(key));                                                 \
+        }                                                                                   \
+        slice_t constr;                                                                     \
+        if (!json_object_get_string_strict(obj, &constr)) {                                 \
+            fail_type(arg_loc(key), obj, json_type_string);                                 \
+        }                                                                                   \
+        if (!uuid4_parse_slice(&(out_value)->api_key, constr)) {                            \
+            fail_invalid(arg_loc(key), obj, "invalid API key");                             \
+        }                                                                                   \
+        (out_value)->password                                                               \
+            = constr.len >= UUID4_REPR_LENGTH + sizeof DELIMITER - 1                        \
+                && strneq(constr.val + UUID4_REPR_LENGTH, DELIMITER, sizeof DELIMITER - 1) \
+            ? constr.val + UUID4_REPR_LENGTH + sizeof DELIMITER - 1                         \
+            : NULL;                                                                          \
     } while (0)
 
 #define getarg_user(obj, key, out_value)                                           \
@@ -244,7 +247,7 @@ action_t action_parse(cfg_t *cfg, db_t *db, json_object *obj) {
 
 #define add_key(o, k, v) json_object_object_add_ex(o, k, v, JSON_C_OBJECT_ADD_KEY_IS_NEW | JSON_C_OBJECT_KEY_IS_CONSTANT)
 
-static json_object *msg_to_json_object(msg_t *msg) {
+static json_object *msg_to_json_object(msg_t const *msg) {
     json_object *obj = json_object_new_object();
     add_key(obj, "msg_id", json_object_new_int(msg->id));
     add_key(obj, "sent_at", json_object_new_int64(msg->sent_at));
@@ -313,15 +316,30 @@ json_object *response_to_json(response_t *response) {
         add_key(obj_error, "status", json_object_new_int(status));
         break;
     }
-    case action_type_whois:
+    case action_type_whois: {
         obj_body = json_object_new_object();
-        add_key(obj_body, "user_id", json_object_new_int(response->body.whois.user.id));
-        add_key(obj_body, "email", json_object_new_string(response->body.whois.user.email));
-        add_key(obj_body, "last_name", json_object_new_string(response->body.whois.user.last_name));
-        add_key(obj_body, "first_name", json_object_new_string(response->body.whois.user.first_name));
-        add_key(obj_body, "display_name", json_object_new_string(response->body.whois.user.display_name));
-        add_key(obj_body, "kind", json_object_new_int(response->body.whois.user.kind));
+        user_t *user = &response->body.whois.user;
+        add_key(obj_body, "user_id", json_object_new_int(user->id));
+        json_object *obj_role = json_object_new_object();
+        const char *role_key;
+        switch (user->role) {
+        case role_admin:
+            role_key = "admin";
+            break;
+        case role_member:
+            role_key = "member";
+            add_key(obj_role, "user_name", json_object_new_string(user->member.user_name));
+            break;
+        case role_pro:
+            role_key = "pro";
+            add_key(obj_role, "business_name", json_object_new_string(user->pro.business_name));
+            break;
+        default:
+            unreachable();
+        }
+        add_key(obj_body, role_key, obj_body);
         break;
+    }
     case action_type_send:
         obj_body = json_object_new_object();
         add_key(obj_body, "msg_id", json_object_new_int(response->body.send.msg_id));
@@ -332,8 +350,8 @@ json_object *response_to_json(response_t *response) {
     case action_type_inbox: {
         obj_body = json_object_new_array();
 
-        for (size_t i = 0; i < response->body.inbox.n_msgs; ++i) {
-            json_object_array_add(obj_body, msg_to_json_object(response->body.inbox.msgs));
+        for (size_t i = 0; i < msg_list_len(response->body.inbox); ++i) {
+            json_object_array_add(obj_body, msg_to_json_object(msg_list_at(response->body.inbox, i)));
         }
         break;
     }

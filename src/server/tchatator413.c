@@ -48,41 +48,41 @@ static inline json_object *act(json_object *const obj_action, cfg_t *cfg, db_t *
     return obj_response;
 }
 
-json_object *tchatator413_interpret(json_object *input, cfg_t *cfg, db_t *db, fn_on_action_t on_action, fn_on_response_t on_response, void *on_ctx) {
-    json_object *output;
+json_object *tchatator413_interpret(json_object *obj_input, cfg_t *cfg, db_t *db, fn_on_action_t on_action, fn_on_response_t on_response, void *on_ctx) {
+    json_object *obj_output;
 
-    json_type const input_type = json_object_get_type(input);
+    json_type const input_type = json_object_get_type(obj_input);
     switch (input_type) {
     case json_type_array: {
-        size_t const len = json_object_array_length(input);
-        output = json_object_new_array_ext((int)len);
+        size_t const len = json_object_array_length(obj_input);
+        obj_output = json_object_new_array_ext((int)len);
         for (size_t i = 0; i < len; ++i) {
-            json_object *const action = json_object_array_get_idx(input, i);
+            json_object *const action = json_object_array_get_idx(obj_input, i);
             assert(action);
-            json_object_array_add(output, act(action, cfg, db, on_action, on_response, on_ctx));
+            json_object_array_add(obj_output, act(action, cfg, db, on_action, on_response, on_ctx));
         }
-        assert(len == json_object_array_length(output)); // Same amount of input and output actions
+        assert(len == json_object_array_length(obj_output)); // Same amount of input and output actions
         break;
     }
     case json_type_object:
-        output = json_object_new_array_ext(1);
-        json_object_array_add(output, act(input, cfg, db, on_action, on_response, on_ctx));
+        obj_output = json_object_new_array_ext(1);
+        json_object_array_add(obj_output, act(obj_input, cfg, db, on_action, on_response, on_ctx));
         break;
     default:
-        output = json_object_new_array_ext(1);
-        json_object_array_add(output,
+        obj_output = json_object_new_array_ext(1);
+        json_object_array_add(obj_output,
             response_to_json(&(response_t) {
                 .type = action_type_error,
                 .body.error = {
                     .type = action_error_type_type,
                     .info.type = {
                         .expected = json_type_object,
-                        .obj_actual = input,
+                        .obj_actual = obj_input,
                         .location = "request",
                     },
                 },
             }));
     }
 
-    return output;
+    return obj_output;
 }

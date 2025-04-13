@@ -17,14 +17,14 @@ typedef void (*fn_on_action_t)(const action_t *action, void *ctx);
 typedef void (*fn_on_response_t)(const response_t *response, void *ctx);
 
 /// @brief Interpret a request.
-/// @param input The request JSON object.
+/// @param obj_input The request JSON object.
 /// @param cfg The configuration.
 /// @param db The database.
 /// @param on_action Event handler to call when the action is parsed. Cab be @c NULL.
 /// @param on_response Event handler to call when the action is interpreted. Cab be @c NULL.
 /// @param on_ctx The contect to pass to the previous event handlers.
 /// @return The JSON response object to the request.
-json_object *tchatator413_interpret(json_object *input, cfg_t *cfg, db_t *db, fn_on_action_t on_action, fn_on_response_t on_response, void *on_ctx);
+json_object *tchatator413_interpret(json_object *obj_input, cfg_t *cfg, db_t *db, fn_on_action_t on_action, fn_on_response_t on_response, void *on_ctx);
 
 /// @brief Run the server in interactive mode.
 /// @param cfg The configuration.

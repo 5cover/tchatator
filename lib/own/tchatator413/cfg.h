@@ -107,6 +107,10 @@ int cfg_backlog(cfg_t const *cfg);
 /// @param cfg Configuration
 /// @return the configuration port.
 uint16_t cfg_port(cfg_t const *cfg);
+/// @brief Get the verbosity.
+/// @param cfg Configuration
+/// @return the verbosity.
+int cfg_verbosity(cfg_t const *cfg);
 /// @brief Verifies the root constr.
 /// @param cfg Configuration
 /// @return If the root constr matches.

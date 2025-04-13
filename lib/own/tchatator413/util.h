@@ -33,6 +33,8 @@
 /// @return 1 if the strings are equal, 0 otherwise.
 #define streq(x, y) (strcmp((x), (y)) == 0)
 
+#define streq_nullable(x, y) ((x) == NULL && (y) == NULL || (x) != NULL && (y) != NULL && streq((x), (y)))
+
 /// @brief Compares two strings for equality up to a given length.
 ///
 /// This macro compares the first @p n characters of the null-terminated strings @p x and @p y for equality. It returns 1 if the strings are equal up to the first @p n characters, and 0 otherwise.
@@ -134,23 +136,23 @@ char *fslurp(FILE *fp);
 
 // Uses compiler specific extensions if possible.
 #ifdef __GNUC__ // GCC, Clang, ICC
- 
+
 #define unreachable() (__builtin_unreachable())
- 
+
 #elif defined(_MSC_VER) // MSVC
- 
+
 #define unreachable() (__assume(false))
- 
+
 #else
 // Even if no extension is used, undefined behavior is still raised by
 // the empty function body and the noreturn attribute.
- 
+
 // The external definition of unreachable_impl must be emitted in a separated TU
 // due to the rule for inline functions in C.
- 
-[[noreturn]] inline void unreachable_impl() {}
+
+[[noreturn]] inline void unreachable_impl() { }
 #define unreachable() (unreachable_impl())
- 
+
 #endif
 
 #endif // UTIL_H

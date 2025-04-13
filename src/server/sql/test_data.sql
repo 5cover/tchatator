@@ -1,13 +1,7 @@
 set schema 'tchatator';
 
 insert into
-    _msg (content, user_id_sender, user_id_recipient)
-values
-    ('Bonjour MERTREM (1er message) de la part de 5cover', 3, 1),
-    ('Bonjour Thiercielieux (2eme message) de la part de 5cover', 3, 2);
-
-insert into
-    professionnal (api_key, password_hash, business_name)
+    pro (api_key, password_hash, business_name)
 values
     (
         'bb1b5a1f-a482-4858-8c6b-f4746481cffa',
@@ -33,3 +27,9 @@ values
         '$2y$10$WmZ.J1qFMf.m0mB3N7m6e.rYbkSjxH5yl/22ksIqjTth8Ar7jEgVO', -- member2_mdp
         'member2'
     );
+
+insert into
+    _msg (content, user_id_sender, user_id_recipient)
+values
+    ('Bonjour MERTREM (1er message) de la part de 5cover', 3, 1),
+    ('Bonjour Thiercielieux (2eme message) de la part de 5cover', 3, 2);

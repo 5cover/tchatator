@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
         cfg_dump(cfg);
         result = EX_OK;
     } else {
-        db_t *db = db_connect(cfg, verbosity,
+        db_t *db = db_connect(cfg,
             require_env(cfg, "DB_HOST"),
             require_env(cfg, "DB_PORT"),
             require_env(cfg, "DB_NAME"),

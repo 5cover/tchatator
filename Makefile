@@ -7,10 +7,9 @@ CFLAGS := -std=gnu2x -Wall -Wextra \
          -Winit-self -Wshadow -Wstrict-prototypes -Wformat -Wno-format-zero-length \
          -Wredundant-decls -Wfloat-equal -Wundef -Wvla -Wno-parentheses \
          -Ilib/own -isystem lib/vendor \
-		 -D__SKIP_GNU
-
-# CLFAGS += -fanalyzer # takes time
-# CLFAGS += -fsanitize=address,leak,undefined # messes with debugging
+         -D__SKIP_GNU \
+ 		 #-fsanitize=address # messes with debugging
+ 		 #-fanalyzer
 
 LFLAGS_CLIENT := -I/usr/include/json-c -ljson-c
 LFLAGS_SERVER := -I/usr/include/json-c -ljson-c -I/usr/include/postgresql -L/usr/lib/x86_64-linux-gnu -lpq
@@ -37,8 +36,8 @@ src_test := $(call rwildcard,test,*.c)
 src_lib := $(call rwildcard,lib,*.c)
 
 sql_dir := src/server/sql
-src_sql := $(addprefix $(sql_dir)/, schema.sql tables.sql functions.sql views.sql test_data.sql)
-src_sql_test := $(addprefix $(sql_dir)/, schema.sql tables.sql functions.sql views.sql data.sql)
+src_sql := $(addprefix $(sql_dir)/, schema.sql tables.sql functions.sql views.sql triggers/*.sql data.sql)
+src_sql_test := $(addprefix $(sql_dir)/, schema.sql tables.sql functions.sql views.sql triggers/*.sql test_data.sql)
 
 bin_dir := bin
 bin_client := $(bin_dir)/tchatator
@@ -65,9 +64,14 @@ server: src/server.c $(src_server) $(src_common) $(src_lib)
 	mkdir -p $(bin_dir)
 	$(CC) $(CFLAGS) -o $(bin_server) $^ $(LFLAGS_SERVER)
 
-test: $(src_test) $(src_server) $(src_common) $(src_lib)
+__DIR__ := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+test: $(bin_test)
+	set -a; . $(__DIR__)/test.env; bin/test
+
+
+$(bin_test): $(src_test) $(src_server) $(src_common) $(src_lib)
 	mkdir -p $(bin_dir)
-	$(CC) $(CFLAGS) -o $(bin_test) $^ $(LFLAGS_SERVER) -lm
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS_SERVER) -lm
 
 testdb: SHELL:=/bin/bash
 testdb: $(src_sql_test)
@@ -77,11 +81,11 @@ testdb: $(src_sql_test)
 	echo "Preparing SQL file list..."; \
 	sql_args=(); \
 	for file in $^; do \
-		echo "  > $$file"; \
+		echo "  < $$file"; \
 		sql_args+=("-f" "$$file"); \
 	done; \
 	echo "Executing psql..."; \
-	PGPASSWORD="$$DB_PASSWORD" psql -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" -d "$$DB_NAME" -v ON_ERROR_STOP=on "$${sql_args[@]}"
+	PGPASSWORD="$$DB_PASSWORD" psql -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" -d "$$DB_NAME" -v ON_ERROR_STOP=on "$${sql_args[@]}" -c 'commit;'
 
 db: SHELL:=/bin/bash
 db: $(src_sql)
@@ -91,8 +95,8 @@ db: $(src_sql)
 	echo "Preparing SQL file list..."; \
 	sql_args=(); \
 	for file in $^; do \
-		echo "  > $$file"; \
+		echo "  < $$file"; \
 		sql_args+=("-f" "$$file"); \
 	done; \
 	echo "Executing psql..."; \
-	PGPASSWORD="$$DB_PASSWORD" psql -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" -d "$$DB_NAME" "$${sql_args[@]}"
+	PGPASSWORD="$$DB_PASSWORD" psql -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" -d "$$DB_NAME" "$${sql_args[@]}" -c 'commit;'

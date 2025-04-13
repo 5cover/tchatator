@@ -2,9 +2,16 @@
 /// @author 5cover (Scover)
 /// @brief Quick unit testing library
 /// @copyright Public Domain - The Unlicense
-/// @date 30/01/2024
+/// @date 12/04/25
+/// @version 1.1.1
 /// @details
 /// See README.md for details and usage.
+///
+/// CHANGELOG
+/// 1.1.1
+/// Fixed UB with va_list misuse in _stbtest_test_case
+/// 1.1.0
+/// Changed table display to come before the summary. Reads better.
 
 #ifndef STB_TEST_H_
 #define STB_TEST_H_
@@ -86,17 +93,19 @@ struct test test_start(char const *name) {
 }
 
 bool _stbtest_test_case(unsigned line, char *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...) {
-    va_list ap;
+    va_list ap, ap1;
 
     va_start(ap, fmt_name);
-    size_t name_size = vsnprintf(NULL, 0, fmt_name, ap) + 1;
-    va_end(ap);
+    
+    va_copy(ap1, ap);
+    size_t name_size = vsnprintf(NULL, 0, fmt_name, ap1) + 1;
+    va_end(ap1);
 
     char *name = malloc(sizeof *name * name_size);
     if (!name) abort();
 
-    va_start(ap, fmt_name);
     vsnprintf(name, name_size, fmt_name, ap);
+
     va_end(ap);
 
     arrput(test->cases,
@@ -129,14 +138,6 @@ bool test_end(struct test *test, FILE *output) {
             if ((len = strlen(c->name)) > col_len_name) col_len_name = len;
         }
     }
-
-    // Print summary
-    fprintf(output, "test %s: %d ko, %d ok, %d total: %s\n",
-        nb_ko == 0 ? "\033[32;49msuccess\033[39;49m" : "\033[31;49mfailure\033[39;49m",
-        nb_ko,
-        nb_ok,
-        nb_ko + nb_ok,
-        test->name);
 
     // Show table if test failed
     if (nb_ko != 0) {
@@ -187,6 +188,14 @@ bool test_end(struct test *test, FILE *output) {
                     c->name);
         }
     }
+
+    // Print summary
+    fprintf(output, "test %s: %d ko, %d ok, %d total: %s\n",
+        nb_ko == 0 ? "\033[32;49msuccess\033[39;49m" : "\033[31;49mfailure\033[39;49m",
+        nb_ko,
+        nb_ok,
+        nb_ko + nb_ok,
+        test->name);
 
     // Deallocate
     for (i = 0; i < arrlen(test->cases); ++i)

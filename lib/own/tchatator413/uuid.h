@@ -16,8 +16,9 @@ typedef struct {
     uint8_t data[16];
 } uuid4_t;
 
-/// @brief Length of the canonical representation of a version 4 UUID, excluding the null terminator.
+/// @brief Length in bytes of the canonical representation of a version 4 UUID, excluding the null terminator.
 #define UUID4_REPR_LENGTH 36
+#define UUID4_FMT "%." STR(UUID4_REPR_LENGTH) "s"
 
 /// @brief Generate the representation of a version 4 UUID.
 /// @param uuid The UUID.

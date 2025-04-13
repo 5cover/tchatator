@@ -15,16 +15,13 @@ void response_destroy(response_t *response) {
         db_collect(response->body.whois.user.memory_owner_db);
         break;
     case action_type_motd:
-        db_collect(response->body.motd.memory_owner_db);
-        free(response->body.motd.msgs);
+        msg_list_destroy(response->body.motd);
         break;
     case action_type_inbox:
-        db_collect(response->body.inbox.memory_owner_db);
-        free(response->body.inbox.msgs);
+        msg_list_destroy(response->body.motd);
         break;
     case action_type_outbox:
-        db_collect(response->body.outbox.memory_owner_db);
-        free(response->body.outbox.msgs);
+        msg_list_destroy(response->body.motd);
         break;
     default:;
     }
@@ -141,8 +138,7 @@ response_t action_evaluate(action_t const *action, cfg_t *cfg, db_t *db) {
         if (!(rep.body.DO = db_get_inbox(db, cfg,
                   cfg_page_inbox(cfg),
                   cfg_page_inbox(cfg) * (action->with.DO.page - 1),
-                  user.id))
-                .memory_owner_db) {
+                  user.id))) {
             fail(status_internal_server_error);
         }
         break;
@@ -274,7 +270,7 @@ void action_explain(action_t const *action, FILE *output) {
 }
 #endif // NDEBUG
 
-void put_role(role_flags_t role, FILE *stream) {
+void put_role(role_t role, FILE *stream) {
     if (role & role_admin) fputs("admin", stream);
     if (role & role_member) fputs(role & role_admin ? " or member" : "member", stream);
     if (role & role_pro) fputs(role & (role_admin | role_member) ? " or professionnal" : "professionnal", stream);

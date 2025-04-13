@@ -26,6 +26,7 @@ int main(void) {
     test(test_uuid4());
 
     cfg_t *cfg = cfg_defaults();
+    cfg_set_verbosity(cfg, INT_MAX);
 
     {
         api_key_t root_api_key;
@@ -36,7 +37,7 @@ int main(void) {
         cfg_load_root_credentials(cfg, root_api_key, require_env(cfg, "ROOT_PASSWORD"));
     }
 
-    db_t *db = db_connect(cfg, INT_MAX,
+    db_t *db = db_connect(cfg,
         require_env(cfg, "DB_HOST"),
         require_env(cfg, "DB_PORT"),
         require_env(cfg, "DB_NAME"),

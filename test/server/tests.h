@@ -37,26 +37,28 @@ void observe_put_role(void);
 #pragma GCC diagnostic ignored "-Wcomment"
 
 /// @brief X-macro that expands to the list of Tchattator413 tests.
-#define X_TESTS(X)                                               \
-    /* Integration tests (> 1 action) */                         \
-    X(member1_send_pro1_inbox_member1_rm)                        \
-    /* Unit tests */                                             \
-    /*X(admin_whois_imax)*/                                          \
-    /*X(admin_whois_neg1)*/                                          \
-    /*X(admin_whois_pro1)*/                                          \
-    /*X(empty)*/                                                     \
-    /*X(invalid_whois_pro1)*/                                        \
-    /*X(malformed)*/                                                 \
-    /*X(member1_send)*/                                              \
-    /*X(member1_whois_member1_by_email)*/                            \
-    /*X(member1_whois_member1_by_name)*/                             \
-    /*X(member1_whois_member1)*/                                     \
-    /*X(member1_whois_pro1_by_email)*/                               \
-    /*X(member1_whois_pro1_by_name)*/                                \
-    /*X(member1_whois_pro1)*/                                        \
-    /*X(pro1_inbox)*/                                                \
-    /*X(pro1_send)*/                                                 \
-    /*X(zero)*/                                                      \
+#define X_TESTS(X)                        \
+    X(db_verify_user_constr)              \
+    /* Integration tests (> 1 action) */  \
+    X(member1_send_pro1_inbox_member1_rm) \
+    /* Unit tests */                      \
+    X(db_get_user)                        \
+    /*X(admin_whois_imax)*/               \
+    /*X(admin_whois_neg1)*/               \
+    /*X(admin_whois_pro1)*/               \
+    /*X(empty)*/                          \
+    /*X(invalid_whois_pro1)*/             \
+    /*X(malformed)*/                      \
+    /*X(member1_send)*/                   \
+    /*X(member1_whois_member1_by_email)*/ \
+    /*X(member1_whois_member1_by_name)*/  \
+    /*X(member1_whois_member1)*/          \
+    /*X(member1_whois_pro1_by_email)*/    \
+    /*X(member1_whois_pro1_by_name)*/     \
+    /*X(member1_whois_pro1)*/             \
+    /*X(pro1_inbox)*/                     \
+    /*X(pro1_send)*/                      \
+    /*X(zero)*/                           \
     //
 #pragma GCC diagnostic pop
 
@@ -112,10 +114,12 @@ X_TESTS(DECLARE_TEST)
 /// @brief A malformed API key representation.
 #define API_KEY_MALFORMED "123e4567e89b12d3a456426614174000"
 
-/// @brief User ID of member 1.
-#define USER_ID_MEMBER1 5
-/// @brief User ID of pro 1.
-#define USER_ID_PRO1 1
+enum {
+    USER_ID_PRO1 = 1,
+    USER_ID_PRO2,
+    USER_ID_MEMBER1,
+    USER_ID_MEMBER2,
+};
 
 /// @brief A Tchattator413 test context.
 typedef struct {
@@ -159,14 +163,18 @@ bool json_object_eq_fmt(json_object *obj_actual, json_object *obj_expected);
 /// @brief Test a long for equality with an expected value.
 #define test_case_eq_int64(t, actual, expected, fmt) test_case((t), actual == expected, fmt " == %ld", actual)
 /// @brief Test a string for equality with an expected value.
-#define test_case_eq_str(t, actual, expected, fmt) test_case((t), streq(actual, expected), fmt " == %s", actual)
+#define test_case_eq_str(t, actual, expected, fmt) test_case((t), streq_nullable(actual, expected), fmt " == %s", actual)
 /// @brief Test a JSON object for equality with an expected value.
 #define test_case_eq_json_object(t, actual, expected, fmt) test_case((t), json_object_equal(actual, expected), fmt " == %s", min_json(actual))
 
-extern char _g_test_case_eq_uuid_repr[UUID4_REPR_LENGTH];
+/// @brief Temporary placeholder for the representation of the UUID currently being tested for equality.
+extern char _g_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
 
 /// @brief Test an UUID for equality with an expected value.
-#define test_case_eq_uuid(t, actual, expected, fmt) test_case((t), uuid4_eq(actual, expected), fmt " == %" STR(UUID4_REPR_LENGTH) "s", uuid4_repr(expected, _g_test_case_eq_uuid_repr));
+#define test_case_eq_uuid(t, actual, expected, fmt) test_case((t), uuid4_eq(actual, expected), \
+    fmt UUID4_FMT " == " UUID4_FMT,                                                            \
+    uuid4_repr(actual, _g_test_case_eq_uuid_repr + UUID4_REPR_LENGTH),                         \
+    uuid4_repr(expected, _g_test_case_eq_uuid_repr));
 
 /// @brief A special return value for test transaction returns.
 #define errstatus_tested (errstatus_t)(max_errstatus + 1)

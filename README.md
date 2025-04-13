@@ -23,9 +23,7 @@ make # build the client and the server
 ./bin/tchatator413
 ```
 
-Run tests:
+## Tests
 
-```bash
-make test
-bin/test
-```
+1. Provide test.env in the same directory as the Makefile
+2. run `make test` to run the tests. Or run `make bin/test` to just build the test binary.

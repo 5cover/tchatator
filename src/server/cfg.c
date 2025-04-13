@@ -46,14 +46,13 @@ char const *require_env(cfg_t *cfg, char const *name) {
 
 static inline void _vlog(char const *file, int line, FILE *stream, log_lvl_t lvl, char const *fmt, va_list ap) {
     time_t t = time(NULL);
-    struct tm *tm = localtime(&t);
     char timestr[32];
-    strftime(timestr, sizeof timestr, "%F %H:%M:%S", tm);
+    strftime(timestr, sizeof timestr, "%F %H:%M:%S", localtime(&t));
     fprintf(stream, "%s:%s:%d: ", timestr, file, line);
     switch (lvl) {
-    case log_error: fprintf(stream, "error: "); break;
-    case log_info: fprintf(stream, "info: "); break;
-    case log_warning: fprintf(stream, "warning: "); break;
+    case log_error: fputs("error: ", stream); break;
+    case log_info: fputs("info: ", stream); break;
+    case log_warning: fputs("warning: ", stream); break;
     }
     vfprintf(stream, fmt, ap);
 }
@@ -222,3 +221,4 @@ DEFINE_CONFIG_GETTER(int, rate_limit_h)
 DEFINE_CONFIG_GETTER(int, block_for)
 DEFINE_CONFIG_GETTER(int, backlog)
 DEFINE_CONFIG_GETTER(uint16_t, port)
+DEFINE_CONFIG_GETTER(int, verbosity)

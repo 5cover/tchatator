@@ -9,6 +9,8 @@
 ---
 
 - [ ] use `""` for user (tchatator413/...) includes instead of `<>`
+- [ ] write a test for "user" view role constant values
+- [ ] write geenral db unit tests for CRUD and triggers
 - [x] change admin user id representation : there is a duplication : admin role + id = 0. Solution: say user with ID 0 is "root aka the super-user" and has admin permissions. Other admins can be defined.
 - [x] remove session managment: it only complicate the protocol: api keys are enough of an an authentification
 - [ ] use asprintf instead of bufffer_size and vstrfmt
@@ -20,6 +22,7 @@
 - [ ] mdoc style manpage
 - [ ] gendoc workflow github pages from 413
 - [ ] remove JSONf. no need for a custom format. build a json object from placeholders instead. maybe using json pointers.
+- [ ] object macros for test passwords
 
 ## bugs
 

@@ -24,13 +24,6 @@ typedef int32_t serial_t;
 /// @brief Maximum length of a client (member) user pseudo.
 #define PSEUDO_LENGTH 255
 
-/// @brief The kind of an user.
-typedef enum {
-    user_kind_member, ///< @brief Member (client).
-    user_kind_pro_prive, ///< @brief Private professionnal.
-    user_kind_pro_public, ///< @brief Public professionnal.
-} user_kind_t;
-
 typedef struct {
     api_key_t api_key; ///< @brief User API key
     char const *password; ///< @brief Provided password (@c NULL if no password provided)
@@ -44,12 +37,12 @@ typedef enum ATTR_FLAG_ENUM {
     role_pro = 1 << 2, ///< @brief Professional role.
     role_all = role_admin | role_member | role_pro, ///< @brief All roles.
     max_role = role_all, ///< @brief Largest value of the enumeration.
-} role_flags_t;
+} role_t;
 
 /// @brief Information about the identity of an user.
 typedef struct {
     /// @brief The roles of the user.
-    role_flags_t role;
+    role_t role;
     /// @brief The ID of the user or @c 0 for the root user.
     serial_t id;
 } user_identity_t;

@@ -2,7 +2,7 @@
   "do": "send",
   "with": {
     "constr": "%s",
-    "dest": "pro1",
+    "dest": "pro1 corp",
     "content": "Bonjour du language C :)"
   }
 }

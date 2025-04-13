@@ -13,12 +13,13 @@
 #include <postgresql/libpq-fe.h>
 #include <stdlib.h>
 
-#define TBL_USER "user"
-#define TBL__MSG "_msg"
-#define TBL_INBOX "inbox"
-#define TBL_MEMBER "member"
-#define TBL_PRO "professionnal"
-#define CALL_FUN_SEND_MSG(arg1, arg2, arg3) "tchatator.send_msg(" arg1 "::int," arg2 "::int," arg3 "::varchar)"
+#define SCHEMA "tchatator"
+#define TBL_USER SCHEMA ".user"
+#define TBL__MSG SCHEMA "._msg"
+#define TBL_INBOX SCHEMA ".inbox"
+#define TBL_MEMBER SCHEMA ".member"
+#define TBL_PRO SCHEMA ".pro"
+#define CALL_FUN_SEND_MSG(arg1, arg2, arg3) SCHEMA ".send_msg(" arg1 "::int," arg2 "::int," arg3 "::varchar)"
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define ntohll(x) x
@@ -45,21 +46,13 @@
 #define log_fmt_pq(db) "database: %s\n", PQerrorMessage(db)
 #define log_fmt_pq_result(result) "database: %s\n", PQresultErrorMessage(result)
 
-/// @returns @ref role_flags_t
-/// @returns @ref errstatus_error on error
-static inline int user_kind_to_role(user_kind_t kind) {
-    _Static_assert((int)errstatus_error < min_role || (int)errstatus_error > max_role,
-        "role_flags_t must not have errstatus_handled in order to avoid return value ambiguity");
-    switch (kind) {
-    case user_kind_member: return role_member;
-    case user_kind_pro_prive: [[fallthrough]];
-    case user_kind_pro_public: return role_pro;
-    default:
-        return errstatus_error;
-    }
-}
+struct msg_list {
+    void *memory_owner_db;
+    size_t n_msgs;
+    msg_t msgs[];
+};
 
-db_t *db_connect(cfg_t *cfg, int verbosity, char const *host, char const *port, char const *database, char const *username, char const *password) {
+db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *database, char const *username, char const *password) {
     PGconn *db = PQsetdbLogin(
         host,
         port,
@@ -67,12 +60,13 @@ db_t *db_connect(cfg_t *cfg, int verbosity, char const *host, char const *port, 
         database,
         username,
         password);
+    const int v = cfg_verbosity(cfg);
     PQsetErrorVerbosity(db,
-        verbosity <= -2
+        v <= -2
             ? PQERRORS_SQLSTATE
-            : verbosity == -1
+            : v == -1
             ? PQERRORS_TERSE
-            : verbosity == 0
+            : v == 0
             ? PQERRORS_DEFAULT
             // verbosity >= 1
             : PQERRORS_VERBOSE);
@@ -96,7 +90,7 @@ void db_collect(void *memory_owner) {
     PQclear(memory_owner);
 }
 
-static inline bool check_password(char const *password, char const *hash) {
+static inline bool check_password(char const *password, char const hash[BCRYPT_HASHSIZE]) {
     if (!password && !hash) return true;
     if (!password || !hash) return false;
     switch (bcrypt_checkpw(password, hash)) {
@@ -104,6 +98,18 @@ static inline bool check_password(char const *password, char const *hash) {
     case 0: return true;
     default: return false;
     }
+}
+
+static inline void cfg_log_incorrect_role(cfg_t *cfg, role_t role) {
+    cfg_log(cfg, log_error, "database: incorrect user role recieved: %d\n", role);
+}
+
+static inline bool validate_db_role(cfg_t *cfg, role_t role) {
+    if (role != role_admin && role != role_member && role != role_pro) {
+        cfg_log_incorrect_role(cfg, role);
+        return false;
+    }
+    return true;
 }
 
 errstatus_t db_verify_user_constr(db_t *db, cfg_t *cfg, user_identity_t *out_user, constr_t constr) {
@@ -115,9 +121,18 @@ errstatus_t db_verify_user_constr(db_t *db, cfg_t *cfg, user_identity_t *out_use
 
     char api_key_repr[UUID4_REPR_LENGTH + 1];
     uuid4_repr(constr.api_key, api_key_repr)[UUID4_REPR_LENGTH] = '\0';
-    char const *arg1 = api_key_repr;
-    PGresult *result = PQexecParams(db, "select kind, user_id, password_hash from " TBL_USER " where api_key = $1",
-        1, NULL, &arg1, NULL, NULL, 1);
+    const char *args[] = { api_key_repr };
+
+    // todo: remove debug loggin
+
+    //fprintf(stderr, "[debug] about to call PQexecParams with api_key_repr = \"%s\"\n", api_key_repr);
+    //fprintf(stderr, "[debug] args = %p args[0] = %p (%s)\n", (void const *)args, (void const *)args[0], args[0]);
+
+    PGresult *result = PQexecParams(db, "select role,password_hash,user_id from " TBL_USER " where api_key=$1",
+        1, NULL, args, NULL, NULL, 1);
+
+    fprintf(stderr, "[debug] PQstatus: %d\n", PQstatus(db));
+    fprintf(stderr, "[debug] PQerrorMessage: %s\n", PQerrorMessage(db));
 
     errstatus_t res;
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -126,16 +141,12 @@ errstatus_t db_verify_user_constr(db_t *db, cfg_t *cfg, user_identity_t *out_use
     } else if (PQntuples(result) == 0) {
         res = errstatus_error;
     } else {
-        int role = user_kind_to_role(pq_recv_l(user_kind_t, PQgetvalue(result, 0, 0)));
-        if (role == errstatus_error) {
-            cfg_log(cfg, log_error, "database: incorrect user kind recieved: %d\n", role);
-            res = errstatus_handled;
+        out_user->role = pq_recv_l(role_t, PQgetvalue(result, 0, 0));
+        if (validate_db_role(cfg, out_user->role)) {
+            res = check_password(constr.password, PQgetvalue(result, 0, 1));
+            if (res) out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 2));
         } else {
-            res = check_password(constr.password, PQgetvalue(result, 0, 0));
-            if (res) {
-                out_user->role = (role_flags_t)role;
-                out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 1));
-            }
+            res = errstatus_handled;
         }
     }
 
@@ -148,7 +159,7 @@ int db_get_user_role(db_t *db, cfg_t *cfg, serial_t user_id) {
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "select kind from " TBL_USER " where user_id=$1",
+    PGresult *result = PQexecParams(db, "select role from " TBL_USER " where user_id=$1",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     int res;
@@ -159,7 +170,8 @@ int db_get_user_role(db_t *db, cfg_t *cfg, serial_t user_id) {
     } else if (PQntuples(result) == 0) {
         res = errstatus_error;
     } else {
-        res = user_kind_to_role(pq_recv_l(user_kind_t, PQgetvalue(result, 0, 0)));
+        res = pq_recv_l(role_t, PQgetvalue(result, 0, 0));
+        if (!validate_db_role(cfg, res)) res = errstatus_handled;
     }
 
     PQclear(result);
@@ -186,8 +198,8 @@ serial_t db_get_user_id_by_email(db_t *db, cfg_t *cfg, const char *email) {
 }
 
 serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
-    // First search by member pseudo since they are unique
-    PGresult *result = PQexecParams(db, "select id from " TBL_MEMBER " where pseudo=$1",
+    // First search by member user_name since they are unique
+    PGresult *result = PQexecParams(db, "select user_id from " TBL_MEMBER " where user_name=$1",
         1, NULL, &name, NULL, NULL, 1);
 
     serial_t res;
@@ -197,8 +209,8 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
         res = errstatus_handled;
     } else if (PQntuples(result) == 0) {
         PQclear(result);
-        // Fallback to pro display name (there must be only 1)
-        result = PQexecParams(db, "select id from " TBL_PRO " where denomination=$1",
+        // Fallback to pro business name (there must be only 1)
+        result = PQexecParams(db, "select user_id from " TBL_PRO " where business_name=$1",
             1, NULL, &name, NULL, NULL, 1);
 
         if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -218,12 +230,12 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
     return res;
 }
 
-errstatus_t db_get_user(db_t *db, cfg_t *cfg, user_t *user) {
-    uint32_t const arg1 = pq_send_l(user->id);
+errstatus_t db_get_user(db_t *db, cfg_t *cfg, user_t *out_user) {
+    uint32_t const arg1 = pq_send_l(out_user->id);
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "select kind, email, nom, prenom, display_name from " TBL_USER " where user_id=$1",
+    PGresult *result = PQexecParams(db, "select role,user_id,member_user_name,pro_business_name from " TBL_USER " where user_id=$1",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     errstatus_t res;
@@ -234,13 +246,24 @@ errstatus_t db_get_user(db_t *db, cfg_t *cfg, user_t *user) {
     } else if (PQntuples(result) == 0) {
         res = errstatus_error;
     } else {
-        user->kind = pq_recv_l(user_kind_t, PQgetvalue(result, 0, 0));
-        user->email = PQgetvalue(result, 0, 1);
-        user->last_name = PQgetvalue(result, 0, 2);
-        user->first_name = PQgetvalue(result, 0, 3);
-        user->display_name = PQgetvalue(result, 0, 4);
-        user->memory_owner_db = result;
-        return errstatus_ok;
+        out_user->memory_owner_db = result;
+        out_user->role = pq_recv_l(role_t, PQgetvalue(result, 0, 0));
+        out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 1));
+        switch (out_user->role) {
+        case role_admin:
+            // don't call PQClear -- since we need the caller to have access to the memory for string data.
+            // we abstract it behind out_user->memory_owner_db and let them call db_cleanup themselves.
+            return errstatus_ok;
+        case role_member:
+            out_user->member.user_name = PQgetvalue(result, 0, 2);
+            return errstatus_ok;
+        case role_pro:
+            out_user->pro.business_name = PQgetvalue(result, 0, 3);
+            return errstatus_ok;
+        default:
+            cfg_log_incorrect_role(cfg, out_user->role);
+            res = errstatus_handled;
+        }
     }
 
     PQclear(result);
@@ -271,8 +294,8 @@ int db_count_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipient_id
 serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipient_id, char const *content) {
     uint32_t const arg1 = pq_send_l(sender_id), arg2 = pq_send_l(recipient_id);
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2, content };
-    int const args_len[sizeof args] = { sizeof arg1, sizeof arg2 };
-    int const args_fmt[sizeof args] = { 1, 1, 0 };
+    int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2 };
+    int const args_fmt[array_len(args)] = { 1, 1, 0 };
     PGresult *result = PQexecParams(db, "select " CALL_FUN_SEND_MSG("$1", "$2", "$3"),
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
@@ -290,7 +313,7 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
     return res;
 }
 
-msg_list_t db_get_inbox(db_t *db, cfg_t *cfg,
+msg_list_t *db_get_inbox(db_t *db, cfg_t *cfg,
     int32_t limit,
     int32_t offset,
     serial_t recipient_id) {
@@ -301,22 +324,21 @@ msg_list_t db_get_inbox(db_t *db, cfg_t *cfg,
     PGresult *result = PQexecParams(db, "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_INBOX " where user_id_recipient=$1 limit $2::int offset $3::int",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
-    msg_list_t msg_list = {};
-
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
         cfg_log(cfg, log_error, log_fmt_pq_result(result));
         PQclear(result);
-        return msg_list;
+        return NULL;
     }
 
-    msg_list.memory_owner_db = result;
     int32_t ntuples = MIN(PQntuples(result), limit);
-    msg_list.n_msgs = (size_t)ntuples;
-    msg_list.msgs = malloc(sizeof *msg_list.msgs * msg_list.n_msgs);
-    if (!msg_list.msgs) errno_exit("malloc");
+    msg_list_t *msg_list = malloc(sizeof *msg_list + sizeof *msg_list->msgs * ntuples);
+    if (!msg_list) errno_exit("malloc");
+
+    msg_list->memory_owner_db = result;
+    msg_list->n_msgs = (size_t)ntuples;
 
     for (int32_t i = 0; i < ntuples; ++i) {
-        msg_t *m = &msg_list.msgs[i];
+        msg_t *m = &msg_list->msgs[i];
         m->id = pq_recv_l(serial_t, PQgetvalue(result, i, 0));
         m->content = PQgetvalue(result, i, 1);
         m->sent_at = pq_recv_timestamp(PQgetvalue(result, i, 2));
@@ -335,7 +357,7 @@ errstatus_t db_get_msg(db_t *db, cfg_t *cfg, msg_t *msg, void **out_memory_owner
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db, "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, USER_id_recipient from " TBL__MSG " where msg_id=$1",
+    PGresult *result = PQexecParams(db, "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, user_id_recipient from " TBL__MSG " where msg_id=$1",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     errstatus_t res;
@@ -411,4 +433,17 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ct
     PQclear(result);
 
     return res;
+}
+
+void msg_list_destroy(msg_list_t *msg_list) {
+    db_collect(msg_list->memory_owner_db);
+    free(msg_list);
+}
+
+size_t msg_list_len(msg_list_t *msg_list) {
+    return msg_list->n_msgs;
+}
+
+msg_t const *msg_list_at(msg_list_t *msg_list, size_t i) {
+    return &msg_list->msgs[i];
 }

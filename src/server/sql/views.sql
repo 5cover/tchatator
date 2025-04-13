@@ -25,6 +25,42 @@ order by
 create view
     "user" as
 select
+    user_id,
+    api_key,
+    password_hash,
+    case
+        when a.user_id is not null then 0 -- admin
+        when m.user_id is not null then 2 -- member
+        when p.user_id is not null then 4 -- pro
+    end as role,
+    m.user_name member_user_name,
+    p.business_name pro_business_name
+from
+    _user
+    left join _admin a using (user_id)
+    left join _member m using (user_id)
+    left join _pro p using (user_id);
+
+create view
+    pro as
+select
     *
 from
-    _user;
+    _pro
+    join _user using (user_id);
+
+create view
+    member as
+select
+    *
+from
+    _member
+    join _user using (user_id);
+
+create view
+    "admin" as
+select
+    *
+from
+    _admin
+    join _user using (user_id);

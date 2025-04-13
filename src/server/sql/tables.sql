@@ -10,16 +10,16 @@ create table _user (
 
 create table _member (
     user_id serial primary key references _user on delete cascade,
-    user_name varchar not null,
+    user_name varchar not null unique,
     full_block_expires_at timestamp
 );
 
-create table _professionnal (
+create table _pro (
     user_id serial primary key references _user on delete cascade,
     business_name varchar not null
 );
 
-create table _administrator (
+create table _admin (
     user_id serial primary key references _user on delete cascade
 );
 
@@ -54,9 +54,9 @@ create table _msg (
 create table _single_block (
     user_id_member int not null
         constraint single_block_fk_member references _member on delete cascade,
-    user_id_professionnal int not null
-        constraint single_block_fk_professionnal references _professionnal on delete cascade,
-    constraint single_block_pk primary key (user_id_member, user_id_professionnal),
+    user_id_pro int not null
+        constraint single_block_fk_pro references _pro on delete cascade,
+    constraint single_block_pk primary key (user_id_member, user_id_pro),
 
     expires_at timestamp not null default 'infinity'
 );

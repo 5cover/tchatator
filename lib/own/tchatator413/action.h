@@ -143,7 +143,7 @@ typedef struct {
         struct {
             serial_t msg_id;
         } send;
-        msg_list_t motd, inbox, outbox;
+        msg_list_t *motd, *inbox, *outbox;
         /*struct {
 
         } edit;
@@ -177,7 +177,7 @@ response_t response_for_rate_limit(time_t next_request_at);
 /// @brief Put an user role.
 /// @param role The role flags
 /// @param stream The stream to write to.
-void put_role(role_flags_t role, FILE *stream);
+void put_role(role_t role, FILE *stream);
 
 /// @brief Parse an action from a JSON object.
 /// @param db The configuration.

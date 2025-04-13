@@ -19,21 +19,26 @@ typedef struct {
     /// @brief Handle to the database memory owner.
     void *memory_owner_db;
     serial_t id;
-    user_kind_t kind;
-    char const *email, *last_name, *first_name, *display_name;
+    /// @brief A single role that tags the user information.
+    role_t role;
+    union {
+        /// @brief Tagged by @ref role_member
+        struct {
+            char const *user_name;
+        } member;
+        /// @brief Tagged by @ref role_pro
+        struct {
+            char const *business_name;
+        } pro;
+    };
 } user_t;
 
 /// @brief Represents a list of messages.
 /// @details This struct contains a pointer to an array of messages and the number of messages in the array.
-typedef struct {
-    void *memory_owner_db;
-    msg_t *msgs;
-    size_t n_msgs;
-} msg_list_t;
+typedef struct msg_list msg_list_t;
 
 /// @brief Initialize a database connection.
 /// @param cfg The configuration.
-/// @param verbosity The verbosity level.
 /// @param host The database host name to use for the connection.
 /// @param port The database port number to use for the connection.
 /// @param database The database name to use for the connection.
@@ -41,7 +46,7 @@ typedef struct {
 /// @param password The database password to use for the connection.
 /// @return A new database connection.
 /// @return @c NULL if the connection failed.
-db_t *db_connect(cfg_t *cfg, int verbosity, char const *host, char const *port, char const *database, char const *username, char const *password);
+db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *database, char const *username, char const *password);
 
 /// @brief Destroy a database connection.
 /// @param db The database connection to destroy. No-op if @c NULL.
@@ -49,10 +54,10 @@ void db_destroy(db_t *db);
 
 /// @brief Cleans up a memory owner.
 /// @param memory_owner The memory owner to clean up.
-/// @note @c NULL is no-op
+/// @note @c NULL is no-op.
 void db_collect(void *memory_owner);
 
-/// @brief Verify an API key.
+/// @brief Verify a connection string.
 /// @param db The database.
 /// @param cfg The configuration.
 /// @param out_user Assigned to the identity of the user.
@@ -113,7 +118,7 @@ errstatus_t db_check_password(db_t *db, cfg_t *cfg, serial_t user_id, char const
 /// @param db The database.
 /// @param cfg The configuration.
 /// @param user_id The ID of the user to get the role of.
-/// @return @ref role_flags_t the role of the user is found.
+/// @return @ref role_t the role of the user is found.
 /// @return @ref errstatus_handled A database error occured. A message has been shown. @p out_user is untouched.
 /// @return @ref errstatus_error No user of ID @p user_id exists in the database.
 int db_get_user_role(db_t *db, cfg_t *cfg, serial_t user_id);
@@ -144,8 +149,9 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
 /// @param limit The maximum number of messages to fetch.
 /// @param offset The offset of the query.
 /// @param recipient_id The ID of the user who recieved the messages.
-/// @return A message list. The memory owner is @c NULL on error.
-msg_list_t db_get_inbox(db_t *db, cfg_t *cfg,
+/// @return A message list, or @c NULL on error.
+/// @remark The returned msg_list is owned by the caller.
+msg_list_t *db_get_inbox(db_t *db, cfg_t *cfg,
     int32_t limit,
     int32_t offset,
     serial_t recipient_id);
@@ -171,5 +177,22 @@ typedef errstatus_t (*fn_transaction_t)(db_t *db, cfg_t *cfg, void *ctx);
 /// @param ctx The context to pass to @p {body}. Can be @c {NULL}.
 /// @return The error status of @p {body}, or of the BEGIN, COMMIT or ROLLBACK action if they weren't successful.
 errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ctx);
+
+// msg_list
+
+/// Destroys a message list, freeing its associated memory.
+/// @param msg_list The message list to be destroyed.
+void msg_list_destroy(msg_list_t *msg_list);
+
+/// Returns the number of messages in the message list.
+/// @param msg_list The message list to get the length of.
+/// @return Number of messages in the list.
+size_t msg_list_len(msg_list_t *msg_list);
+
+/// Retrieves a message at the specified index from a message list.
+/// @param msg_list The message list to retrieve the message from.
+/// @param i The index of the message to retrieve.
+/// @return A constant pointer to the message at the specified index.
+msg_t const *msg_list_at(msg_list_t *msg_list, size_t i);
 
 #endif // DB_H
