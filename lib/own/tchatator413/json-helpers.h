@@ -8,7 +8,7 @@
 
 #include "slice.h"
 #include "util.h"
-#include <json-c.h>
+#include "json-c.h"
 #include <stdbool.h>
 #include <stdint.h>
 

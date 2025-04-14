@@ -205,12 +205,12 @@ void login(const char *api_key, const char *password) {
     json_object_object_add(jobj, "do", json_object_new_string("login"));
     json_object_object_add(jobj, "with", with_obj);
 
-    json_object *obj_rep = send_request(jobj);
+    json_object *jo_rep = send_request(jobj);
     json_object_put(jobj);
-    if (!obj_rep) return;
+    if (!jo_rep) return;
 
     gs_state.tag = state_connected;
-    gs_state.info.connected.token = json_object_get_int64(json_object_object_get(obj_rep, "token"));
+    gs_state.info.connected.token = json_object_get_int64(json_object_object_get(jo_rep, "token"));
 }
 
 void logout() {
@@ -218,13 +218,13 @@ void logout() {
     json_object_object_add(jobj, "do", json_object_new_string("logout"));
     json_object_object_add(jobj, "token", json_object_new_int64(gs_state.info.connected.token));
 
-    json_object *obj_rep = send_request(jobj);
+    json_object *jo_rep = send_request(jobj);
     json_object_put(jobj);
-    if (!obj_rep) return;
+    if (!jo_rep) return;
 
     gs_state.tag = state_unconnected;
 
-    json_object_put(obj_rep);
+    json_object_put(jo_rep);
 }
 
 void send_message(const char *dest, const char *content) {

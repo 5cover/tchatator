@@ -6,8 +6,8 @@
 #include "server/tests.h"
 #include "tchatator413/const.h"
 #include <stdlib.h>
-#include <tchatator413/cfg.h>
-#include <tchatator413/db.h>
+#include "tchatator413/cfg.h"
+#include "tchatator413/db.h"
 
 // #define DO_OBSERVE
 #define OUT stdout

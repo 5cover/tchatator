@@ -38,21 +38,21 @@ static inline void on_response_send(response_t const *response, void *ctx) {
 static inline errstatus_t transaction(db_t *db, cfg_t *cfg, void *ctx) {
     context_t *c = ctx;
 
-    json_object *obj_input, *obj_output, *obj_output_expected;
+    json_object *jo_input, *jo_output, *jo_output_expected;
 
     // Send a message
-    obj_input = load_jsonf(IN_JSONF(send, "_send"), c->token, c->user_id_recipient);
+    jo_input = load_jsonf(IN_JSONF(send, "_send"), c->token, c->user_id_recipient);
     time_t msg_sentat = time(NULL);
-    obj_output = tchatator413_interpret(obj_input, cfg, db, c->test.server, on_action_send, on_response_send, ctx);
-    json_object_put(obj_input);
+    jo_output = tchatator413_interpret(jo_input, cfg, db, c->test.server, on_action_send, on_response_send, ctx);
+    json_object_put(jo_input);
     test_case_n_actions(&c->test, 1);
 
     if (!c->msg_id_set) return errstatus_tested;
 
-    obj_output_expected = load_jsonf(OUT_JSONF(send, "_send"), c->msg_id);
-    TEST_CASE_EQ_JSON_OBJECT(&c->test.t, obj_output, obj_output_expected, );
-    json_object_put(obj_output_expected);
-    json_object_put(obj_output);
+    jo_output_expected = load_jsonf(OUT_JSONF(send, "_send"), c->msg_id);
+    TEST_CASE_EQ_JSON_OBJECT(&c->test.t, jo_output, jo_output_expected, );
+    json_object_put(jo_output_expected);
+    json_object_put(jo_output);
 
     // Try to retrieve it
     msg_t msg = { .id = c->msg_id };

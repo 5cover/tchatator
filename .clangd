@@ -1,8 +1,0 @@
-CompileFlags:
-  Add: [
-    "-std=c2x",
-    "-I/home/raphael/Documents/Programmation/Projets/tchatator/lib/own",
-    "-isystem", "/home/raphael/Documents/Programmation/Projets/tchatator/lib/vendor",
-    "-xc",
-    "-D__SKIP_GNU"
-  ]

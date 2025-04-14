@@ -4,8 +4,8 @@
 /// @date 1/02/2025
 
 #include "../tests.h"
-#include <tchatator413/action.h>
-#include <tchatator413/tchatator413.h>
+#include "tchatator413/action.h"
+#include "tchatator413/tchatator413.h"
 
 #define NAME pro1_inbox
 
@@ -70,12 +70,12 @@ TEST_SIGNATURE(NAME) {
 
     // Pro queries inbox
     {
-        json_object *obj_input = load_jsonf(IN_JSONF(NAME, "_inbox"), gs_token_pro1);
-        json_object *obj_output = tchatator413_interpret(obj_input, cfg, db, server, on_action, on_response, &test);
+        json_object *jo_input = load_jsonf(IN_JSONF(NAME, "_inbox"), gs_token_pro1);
+        json_object *jo_output = tchatator413_interpret(jo_input, cfg, db, server, on_action, on_response, &test);
         test_case_n_actions(&test, 1);
-        test_output_json_file(&test, obj_output, OUT_JSON(NAME, "_inbox"));
-        json_object_put(obj_input);
-        json_object_put(obj_output);
+        test_output_json_file(&test, jo_output, OUT_JSON(NAME, "_inbox"));
+        json_object_put(jo_input);
+        json_object_put(jo_output);
     }
 
     // Pro logs out

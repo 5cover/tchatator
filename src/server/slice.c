@@ -3,7 +3,7 @@
 /// @brief Slice data structre - Implementation
 /// @date 1/02/2025
 
-#include <tchatator413/slice.h>
+#include "tchatator413/slice.h"
 
 #include <limits.h>
 

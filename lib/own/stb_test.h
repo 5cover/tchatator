@@ -78,7 +78,7 @@ STB_TEST_DEFINITION bool test_end(struct test *test, FILE *output);
 
 #ifdef STB_TEST_IMPLEMENTATION
 
-#include <stb_ds.h>
+#include "stb_ds.h"
 
 #include <math.h>
 #include <stdarg.h>

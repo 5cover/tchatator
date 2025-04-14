@@ -5,13 +5,13 @@
 
 #include <assert.h>
 #include <getopt.h>
-#include <json-c.h>
-#include <memlst.h>
+#include "json-c.h"
+#include "memlst.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <tchatator413/cfg.h>
-#include <tchatator413/json-helpers.h>
-#include <tchatator413/tchatator413.h>
+#include "tchatator413/cfg.h"
+#include "tchatator413/json-helpers.h"
+#include "tchatator413/tchatator413.h"
 #include "util.h"
 #include <unistd.h>
 
@@ -114,8 +114,6 @@ int main(int argc, char **argv) {
             }
         }
     }
-
-    int result;
 
     cfg_set_verbosity(cfg, verbosity);
 

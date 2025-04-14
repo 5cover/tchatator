@@ -6,7 +6,7 @@
 #ifndef ACTION_H
 #define ACTION_H
 
-#include <json-c.h>
+#include "json-c.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -46,11 +46,11 @@ typedef struct {
     union {
         struct {
             /// @brief A human-friendly representation of the location of the error in the JSON request structure.
-            char const *z_location;
+            char const *location;
             /// @brief The JSON object that is of the wrong type.
             /// @note Invariant: the type of this object is different from @ref expected.
             json_object *jo_actual;
-            /// @brief The type @ref obj_actual should have been of.
+            /// @brief The type @ref jo_actual should have been of.
             json_type expected;
         } type;
         struct {
@@ -63,7 +63,7 @@ typedef struct {
             /// @brief The reason why the value is invalid.
             char const *reason;
             /// @brief The faulty JSON object.
-            json_object *obj_bad;
+            json_object *jo_bad;
         } invalid;
         struct {
             /// @brief The Unix time at which the next request will be accepted.

@@ -6,7 +6,7 @@ CFLAGS := -std=gnu2x -Wall -Wextra \
          -Wcast-qual -Wcast-align -Wstrict-aliasing -Wpointer-arith \
          -Winit-self -Wshadow -Wstrict-prototypes -Wformat -Wno-format-zero-length \
          -Wredundant-decls -Wfloat-equal -Wundef -Wvla -Wno-parentheses \
-         -Ilib/own -isystem lib/vendor \
+         -iquote lib/own -isystem lib/vendor \
 		 -Werror=incompatible-pointer-types \
          -D__SKIP_GNU \
  		 #-fsanitize=address # messes with debugging
@@ -24,6 +24,9 @@ ifeq ($(CONFIG), debug)
 else
     CFLAGS += $(CFLAGS_RELEASE)
 endif
+
+CLANG_TIDY := clang-tidy
+TIDY_OPTS := -p build/compile_commands.json
 
 # Helpers 
 rwildcard = $(foreach d,$(wildcard $(1)/*),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
@@ -46,15 +49,17 @@ bin_test := $(bin_dir)/test
 
 # Targets 
 
-.PHONY: all client server test testdb db clean
+.PHONY: all client server test testdb db clean tidy
 
 # to call docker-gcc (currently unused)
 # ./docker-gcc -o $@ -c '$(CFLAGS)' -l '$(LFLAGS)' $^
 
-all: $(bin_client) $(bin_server)
+all: client server $(bin_test)
 
 clean:
-	rm $(bin_dir)/*
+	rm -rf $(bin_dir)
+tidy:
+	$(CLANG_TIDY) $(TIDY_OPTS) $(shell find src include -name '*.c' -o -name '*.h')
 
 client: src/client.c $(src_client) $(src_common) $(src_lib)
 	mkdir -p $(bin_dir)

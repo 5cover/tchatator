@@ -2,8 +2,8 @@
 
 #include "memlst.h"
 #include <assert.h>
-#include <json-c.h>
-#include <stb_ds.h>
+#include "json-c.h"
+#include "stb_ds.h"
 #include <stdio.h>
 
 

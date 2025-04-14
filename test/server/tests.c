@@ -4,7 +4,7 @@
 /// @date 1/02/2025
 
 #include "tests.h"
-#include <tchatator413/json-helpers.h>
+#include "tchatator413/json-helpers.h"
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sysexits.h>
@@ -72,12 +72,12 @@ json_object *load_jsonf(const char *input_filename, ...) {
     return obj;
 }
 
-bool json_object_eq_fmt(json_object *obj_actual, json_object *obj_expected) {
+bool json_object_eq_fmt(json_object *jo_actual, json_object *jo_expected) {
     // Special handling of our JSON pattern matching mechanism
-    const char *fmt = json_object_get_fmt(obj_expected);
+    const char *fmt = json_object_get_fmt(jo_expected);
     if (fmt) {
         // json object -> arguments
-        char const *str = json_object_get_string(obj_actual);
+        char const *str = json_object_get_string(jo_actual);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-security" // The format string that we get is a the contents of a local file, under our control.
         int n = sscanf(str, fmt);
@@ -86,48 +86,48 @@ bool json_object_eq_fmt(json_object *obj_actual, json_object *obj_expected) {
         return n != EOF;
     }
 
-    json_type const actual_type = json_object_get_type(obj_actual), expected_type = json_object_get_type(obj_expected);
+    json_type const actual_type = json_object_get_type(jo_actual), expected_type = json_object_get_type(jo_expected);
     if (actual_type != expected_type) return false;
     switch (actual_type) {
     case json_type_null: return true;
-    case json_type_boolean: return json_object_get_boolean(obj_actual) == json_object_get_boolean(obj_expected);
+    case json_type_boolean: return json_object_get_boolean(jo_actual) == json_object_get_boolean(jo_expected);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal" // We don't compare the values, we compare the representations. No need for an epsilon.
-    case json_type_double: return json_object_get_double(obj_actual) == json_object_get_double(obj_expected);
+    case json_type_double: return json_object_get_double(jo_actual) == json_object_get_double(jo_expected);
 #pragma GCC diagnostic pop
-    case json_type_int: return json_object_get_int(obj_actual) == json_object_get_int(obj_expected);
+    case json_type_int: return json_object_get_int(jo_actual) == json_object_get_int(jo_expected);
     case json_type_object:
         // Two JSON objects are equal if they contain the same properties, regardless of order
-        if (json_object_object_length(obj_actual) != json_object_object_length(obj_expected)) return false;
-        json_object_object_foreach(obj_actual, k, a_v) {
+        if (json_object_object_length(jo_actual) != json_object_object_length(jo_expected)) return false;
+        json_object_object_foreach(jo_actual, k, a_v) {
             json_object *e_v;
-            if (!json_object_object_get_ex(obj_expected, k, &e_v) || !json_object_eq_fmt(a_v, e_v)) return false;
+            if (!json_object_object_get_ex(jo_expected, k, &e_v) || !json_object_eq_fmt(a_v, e_v)) return false;
         }
         return true;
     case json_type_array: {
-        size_t const actual_len = json_object_array_length(obj_actual), expected_len = json_object_array_length(obj_expected);
+        size_t const actual_len = json_object_array_length(jo_actual), expected_len = json_object_array_length(jo_expected);
         bool equal = actual_len == expected_len;
         for (size_t i = 0; equal && i < actual_len; ++i) {
             equal = json_object_eq_fmt(
-                json_object_array_get_idx(obj_actual, i),
-                json_object_array_get_idx(obj_expected, i));
+                json_object_array_get_idx(jo_actual, i),
+                json_object_array_get_idx(jo_expected, i));
         }
         return equal;
     }
     case json_type_string:
-        return streq(json_object_get_string(obj_actual), json_object_get_string(obj_expected));
+        return streq(json_object_get_string(jo_actual), json_object_get_string(jo_expected));
     default: unreachable();
     }
 }
 
-bool test_output_json_file(test_t *test, json_object *obj_output, char const *expected_output_filename) {
-    json_object *obj_output_expected = json_object_from_file(expected_output_filename);
-    if (!obj_output_expected) {
+bool test_output_json_file(test_t *test, json_object *jo_output, char const *expected_output_filename) {
+    json_object *jo_output_expected = json_object_from_file(expected_output_filename);
+    if (!jo_output_expected) {
         fprintf(stderr, LOG_FMT_JSON_C("failed to parse test output JSON file at '%s'", expected_output_filename));
         exit(EX_DATAERR);
     }
 
-    bool ok = json_object_eq_fmt(obj_output, obj_output_expected);
-    json_object_put(obj_output_expected);
-    return test_case_wide(&test->t, ok, "%s == cat %s", min_json(obj_output), expected_output_filename);
+    bool ok = json_object_eq_fmt(jo_output, jo_output_expected);
+    json_object_put(jo_output_expected);
+    return test_case_wide(&test->t, ok, "%s == cat %s", min_json(jo_output), expected_output_filename);
 }

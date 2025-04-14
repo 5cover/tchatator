@@ -8,16 +8,16 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
-#include <json-c.h>
+#include "json-c.h"
 #include <signal.h>
-#include <stb_ds.h>
+#include "stb_ds.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <tchatator413/tchatator413.h>
+#include "tchatator413/tchatator413.h"
 #include <unistd.h>
 
 #define SERVER_ADDR "127.0.0.1"
@@ -54,16 +54,16 @@ static inline void interpret_request(cfg_t *cfg, db_t *db, int fd) {
     ssize_t bytes_read = read(fd, d_buf, sizeof d_buf - 1);
     if (bytes_read > 0) d_buf[bytes_read] = '\0';
 
-    json_object *obj_input = json_tokener_parse(d_buf);
-    // if !obj_input : invalid JSON recieved
+    json_object *jo_input = json_tokener_parse(d_buf);
+    // if !jo_input : invalid JSON recieved
 
     cfg_log(cfg, log_info, "received json input, interpreting request\n");
 
-    json_object *obj_output = tchatator413_interpret(obj_input, cfg, db, NULL, NULL, NULL);
-    json_object_put(obj_input);
+    json_object *jo_output = tchatator413_interpret(jo_input, cfg, db, NULL, NULL, NULL);
+    json_object_put(jo_input);
 
-    json_object_write(obj_output, cfg, fd);
-    json_object_put(obj_output);
+    json_object_write(jo_output, cfg, fd);
+    json_object_put(jo_output);
 
     cfg_log(cfg, log_info, "request interpretation completed for fd %d\n", fd);
 }

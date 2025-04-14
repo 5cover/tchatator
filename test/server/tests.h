@@ -7,12 +7,12 @@
 #define TESTS_H
 
 #include <assert.h>
-#include <json-c.h>
-#include <stb_test.h>
+#include "json-c.h"
+#include "stb_test.h"
 
-#include <tchatator413/cfg.h>
-#include <tchatator413/db.h>
-#include <tchatator413/json-helpers.h>
+#include "tchatator413/cfg.h"
+#include "tchatator413/db.h"
+#include "tchatator413/json-helpers.h"
 
 // Other tests
 
@@ -140,11 +140,11 @@ _Static_assert(offsetof(test_t, t) == 0, "backing test must be at start of struc
 json_object *load_json(char const *input_filename);
 json_object *load_jsonf(char const *input_filename, ...);
 
-#define test_output_json(t, obj_output, obj_expected_output) \
-    test_case_wide(t, json_object_equal(obj_output, obj_expected_output), "output: %s == %s", min_json(obj_output), min_json(obj_expected_output))
+#define test_output_json(t, jo_output, obj_expected_output) \
+    test_case_wide(t, json_object_equal(jo_output, obj_expected_output), "output: %s == %s", min_json(jo_output), min_json(obj_expected_output))
 
 /// @brief output from JSON file test case
-bool test_output_json_file(test_t *test, json_object *obj_output, char const *expected_output_filename);
+bool test_output_json_file(test_t *test, json_object *jo_output, char const *expected_output_filename);
 
 /// @brief Base on_action event handler.
 test_t *base_on_action(void *test);
@@ -159,7 +159,7 @@ void test_case_n_actions(test_t *test, int expected);
 /// Retrieves the values contained in the variadic arguments.
 ///
 /// @p obj_expected may have contain formatting syntax to indicate the format of the expected values instead of hard strings.
-bool json_object_eq_fmt(json_object *obj_actual, json_object *obj_expected);
+bool json_object_eq_fmt(json_object *jo_actual, json_object *obj_expected);
 
 /// @brief Test an integer for equality with an expected value.
 #define TEST_CASE_EQ_INT(t, actual, expected, fmt) test_case((t), actual == expected, fmt " == %d", actual)

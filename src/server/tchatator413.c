@@ -6,37 +6,37 @@
 #include <assert.h>
 #include <getopt.h>
 #include <stdio.h>
-#include <tchatator413/json-helpers.h>
-#include <tchatator413/tchatator413.h>
+#include "tchatator413/json-helpers.h"
+#include "tchatator413/tchatator413.h"
 #include <unistd.h>
 
 int tchatator413_run_interactive(cfg_t *cfg, db_t *db, int argc, char **argv) {
     memlst_t *mem = memlst_init();
 
-    json_object *const obj_input = memlst_add(&mem, dtor_json_object,
+    json_object *const jo_input = memlst_add(&mem, dtor_json_object,
         optind < argc
             ? json_tokener_parse(argv[optind])
             : json_object_from_fd(STDIN_FILENO));
 
-    if (!obj_input) {
+    if (!jo_input) {
         cfg_log(cfg, log_info, LOG_FMT_JSON_C("failed to parse input"));
         CLEAN_RETURN(mem, EX_DATAERR);
     }
 
-    json_object *obj_output = memlst_add(&mem, dtor_json_object,
-        tchatator413_interpret(obj_input, cfg, db, NULL, NULL, NULL));
+    json_object *jo_output = memlst_add(&mem, dtor_json_object,
+        tchatator413_interpret(jo_input, cfg, db, NULL, NULL, NULL));
 
     // Results
 
-    puts(min_json(obj_output));
+    puts(min_json(jo_output));
 
     CLEAN_RETURN(mem, EX_OK);
 }
 
-static inline json_object *act(json_object const *obj_action, cfg_t *cfg, db_t *db, on_action_fn on_action, on_response_fn on_response, void *on_ctx) {
+static inline json_object *act(json_object const *jo_action, cfg_t *cfg, db_t *db, on_action_fn on_action, on_response_fn on_response, void *on_ctx) {
     memlst_t *mem = memlst_init();
 
-    action_t action = action_parse(&mem, cfg, db, obj_action);
+    action_t action = action_parse(&mem, cfg, db, jo_action);
     if (on_action) on_action(&action, on_ctx);
 
     response_t response = action_evaluate(&action, &mem, cfg, db);
@@ -45,41 +45,41 @@ static inline json_object *act(json_object const *obj_action, cfg_t *cfg, db_t *
     return response_to_json(&response);
 }
 
-json_object *tchatator413_interpret(json_object *obj_input, cfg_t *cfg, db_t *db, on_action_fn on_action, on_response_fn on_response, void *on_ctx) {
-    json_object *obj_output;
+json_object *tchatator413_interpret(json_object *jo_input, cfg_t *cfg, db_t *db, on_action_fn on_action, on_response_fn on_response, void *on_ctx) {
+    json_object *jo_output;
 
-    json_type const input_type = json_object_get_type(obj_input);
+    json_type const input_type = json_object_get_type(jo_input);
     switch (input_type) {
     case json_type_array: {
-        size_t const len = json_object_array_length(obj_input);
-        obj_output = json_object_new_array_ext((int)len);
+        size_t const len = json_object_array_length(jo_input);
+        jo_output = json_object_new_array_ext((int)len);
         for (size_t i = 0; i < len; ++i) {
-            json_object const *const action = json_object_array_get_idx(obj_input, i);
+            json_object const *const action = json_object_array_get_idx(jo_input, i);
             assert(action);
-            json_object_array_add(obj_output, act(action, cfg, db, on_action, on_response, on_ctx));
+            json_object_array_add(jo_output, act(action, cfg, db, on_action, on_response, on_ctx));
         }
-        assert(len == json_object_array_length(obj_output)); // Same amount of input and output actions
+        assert(len == json_object_array_length(jo_output)); // Same amount of input and output actions
         break;
     }
     case json_type_object:
-        obj_output = json_object_new_array_ext(1);
-        json_object_array_add(obj_output, act(obj_input, cfg, db, on_action, on_response, on_ctx));
+        jo_output = json_object_new_array_ext(1);
+        json_object_array_add(jo_output, act(jo_input, cfg, db, on_action, on_response, on_ctx));
         break;
     default:
-        obj_output = json_object_new_array_ext(1);
-        json_object_array_add(obj_output,
+        jo_output = json_object_new_array_ext(1);
+        json_object_array_add(jo_output,
             response_to_json(&(response_t) {
                 .type = action_type_error,
                 .body.error = {
                     .type = action_error_type_type,
                     .info.type = {
                         .expected = json_type_object,
-                        .obj_actual = obj_input,
+                        .jo_actual = jo_input,
                         .location = "request",
                     },
                 },
             }));
     }
 
-    return obj_output;
+    return jo_output;
 }

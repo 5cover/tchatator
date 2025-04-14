@@ -8,7 +8,7 @@
 
 ---
 
-- [ ] use `""` for user (tchatator413/...) includes instead of `<>`
+- [x] use `""` for user (tchatator413/...) includes instead of `<>`
 - [ ] write a test for "user" view role constant values
 - [ ] write geenral db unit tests for CRUD and triggers
 - [x] change admin user id representation : there is a duplication : admin role + id = 0. Solution: say user with ID 0 is "root aka the super-user" and has admin permissions. Other admins can be defined.

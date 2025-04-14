@@ -6,8 +6,8 @@
 #include "strings.h"
 #include "tests.h"
 #include "util.h"
-#include <tchatator413/errstatus.h>
-#include <tchatator413/uuid.h>
+#include "tchatator413/errstatus.h"
+#include "tchatator413/uuid.h"
 
 struct test test_uuid4(void) {
     struct test t = test_start("uuid4");

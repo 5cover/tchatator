@@ -4,7 +4,7 @@
 /// @date 1/02/2025
 
 #include "../tests.h"
-#include <tchatator413/tchatator413.h>
+#include "tchatator413/tchatator413.h"
 
 #define NAME admin_whois_neg1
 
@@ -20,23 +20,23 @@ static void on_response(response_t const *response, void *t) {
     if (!TEST_CASE_EQ_INT(t, response->body.error.type, action_error_type_invalid, )) return;
     TEST_CASE_EQ_STR(t, response->body.error.info.invalid.location, "whois.with.user", );
     TEST_CASE_EQ_STR(t, response->body.error.info.invalid.reason, "invalid user key", );
-    json_object *obj_bad = json_object_new_int(-1);
-    TEST_CASE_EQ_JSON_OBJECT(t, response->body.error.info.invalid.obj_bad, obj_bad, );
-    json_object_put(obj_bad);
+    json_object *jo_bad = json_object_new_int(-1);
+    TEST_CASE_EQ_JSON_OBJECT(t, response->body.error.info.invalid.jo_bad, jo_bad, );
+    json_object_put(jo_bad);
 }
 
 TEST_SIGNATURE(NAME) {
     test_t test = TEST_INIT(NAME);
 
-    json_object *obj_input = load_json(IN_JSON(NAME, ));
+    json_object *jo_input = load_json(IN_JSON(NAME, ));
 
-    json_object *obj_output = tchatator413_interpret(obj_input, cfg, db, server, on_action, on_response, &test);
+    json_object *jo_output = tchatator413_interpret(jo_input, cfg, db, server, on_action, on_response, &test);
     test_case_n_actions(&test, 1);
 
-    test_output_json_file(&test, obj_output, OUT_JSON(NAME, ));
+    test_output_json_file(&test, jo_output, OUT_JSON(NAME, ));
 
-    json_object_put(obj_output);
-    json_object_put(obj_input);
+    json_object_put(jo_output);
+    json_object_put(jo_input);
 
     return test.t;
 }

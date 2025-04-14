@@ -118,14 +118,14 @@ void cfg_set_verbosity(cfg_t *cfg, int verbosity) {
 }
 
 void cfg_load_from_file(cfg_t *cfg, char const *filename) {
-    json_object *obj_cfg = json_object_from_file(filename), *obj;
+    json_object *jo_cfg = json_object_from_file(filename), *obj;
 
-    if (!obj_cfg) {
+    if (!jo_cfg) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_C("failed to parse config file at '%s'", filename));
         log(STD_LOG_STREAM, log_info, INTRO "using defaults\n");
     }
 
-    if (json_object_object_get_ex(obj_cfg, "log_file", &obj)) {
+    if (json_object_object_get_ex(jo_cfg, "log_file", &obj)) {
         slice_t log_filename;
         if (!json_object_get_string_strict(obj, &log_filename)) {
             log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_string, json_object_get_type(obj), "log_file"));
@@ -134,13 +134,13 @@ void cfg_load_from_file(cfg_t *cfg, char const *filename) {
             errno_exit("strndup");
         }
     }
-    if (json_object_object_get_ex(obj_cfg, "backlog", &obj) && !json_object_get_int_strict(obj, &cfg->backlog)) {
+    if (json_object_object_get_ex(jo_cfg, "backlog", &obj) && !json_object_get_int_strict(obj, &cfg->backlog)) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_int, json_object_get_type(obj), "backlog"));
     }
-    if (json_object_object_get_ex(obj_cfg, "block_for", &obj) && !json_object_get_int_strict(obj, &cfg->block_for)) {
+    if (json_object_object_get_ex(jo_cfg, "block_for", &obj) && !json_object_get_int_strict(obj, &cfg->block_for)) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_int, json_object_get_type(obj), "block_for"));
     }
-    if (json_object_object_get_ex(obj_cfg, "max_msg_length", &obj)) {
+    if (json_object_object_get_ex(jo_cfg, "max_msg_length", &obj)) {
         int64_t max_msg_length;
         if (!json_object_get_int64_strict(obj, &max_msg_length)) {
             log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_int, json_object_get_type(obj), "max_msg_length"));
@@ -151,23 +151,23 @@ void cfg_load_from_file(cfg_t *cfg, char const *filename) {
             cfg->max_msg_length = (size_t)max_msg_length;
         }
     }
-    if (json_object_object_get_ex(obj_cfg, "page_inbox", &obj) && !json_object_get_int_strict(obj, &cfg->page_inbox)) {
+    if (json_object_object_get_ex(jo_cfg, "page_inbox", &obj) && !json_object_get_int_strict(obj, &cfg->page_inbox)) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_int, json_object_get_type(obj), "page_inbox"));
     }
-    if (json_object_object_get_ex(obj_cfg, "page_outbox", &obj) && !json_object_get_int_strict(obj, &cfg->page_outbox)) {
+    if (json_object_object_get_ex(jo_cfg, "page_outbox", &obj) && !json_object_get_int_strict(obj, &cfg->page_outbox)) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_int, json_object_get_type(obj), "page_outbox"));
     }
-    if (json_object_object_get_ex(obj_cfg, "port", &obj) && !json_object_get_uint16_strict(obj, &cfg->port)) {
+    if (json_object_object_get_ex(jo_cfg, "port", &obj) && !json_object_get_uint16_strict(obj, &cfg->port)) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_int, json_object_get_type(obj), "port"));
     }
-    if (json_object_object_get_ex(obj_cfg, "rate_limit_h", &obj) && !json_object_get_int_strict(obj, &cfg->rate_limit_h)) {
+    if (json_object_object_get_ex(jo_cfg, "rate_limit_h", &obj) && !json_object_get_int_strict(obj, &cfg->rate_limit_h)) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_int, json_object_get_type(obj), "rate_limit_h"));
     }
-    if (json_object_object_get_ex(obj_cfg, "rate_limit_m", &obj) && !json_object_get_int_strict(obj, &cfg->rate_limit_m)) {
+    if (json_object_object_get_ex(jo_cfg, "rate_limit_m", &obj) && !json_object_get_int_strict(obj, &cfg->rate_limit_m)) {
         log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_int, json_object_get_type(obj), "rate_limit_m"));
     }
 
-    json_object_put(obj_cfg);
+    json_object_put(jo_cfg);
 }
 
 void cfg_dump(cfg_t const *cfg) {
