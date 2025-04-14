@@ -9,7 +9,7 @@
 
 struct memlst {
     void *ptr;
-    fn_dtor_t dtor;
+    dtor_fn dtor;
 };
 
 memlst_t *memlst_init() {
@@ -28,7 +28,7 @@ void memlst_destroy(memlst_t **memlst FILE_LINE_PARAMS) {
     arrfree(*memlst);
 }
 
-void *memlst_add(memlst_t *restrict *restrict memlst, fn_dtor_t dtor, void *restrict ptr FILE_LINE_PARAMS) {
+void *memlst_add(memlst_t *restrict *restrict memlst, dtor_fn dtor, void *restrict ptr FILE_LINE_PARAMS) {
 #ifdef MEMLST_TRACE
     fprintf(stderr, "%s:%d memlst_add(%p, dtor=%p, ptr=%p)\n", file, line, memlst, dtor, ptr);
 #endif

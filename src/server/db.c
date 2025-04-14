@@ -53,14 +53,14 @@ _Static_assert(sizeof(db_t) == sizeof(PGconn *));
 #define db2conn(db) (PGconn *)(db)
 #define conn2db(conn) (db_t *)(conn)
 
-db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *database, char const *username, char const *password) {
+db_t *db_connect(cfg_t *cfg, char const *z_host, char const *z_port, char const *z_database, char const *z_username, char const *z_password) {
     PGconn *conn = PQsetdbLogin(
-        host,
-        port,
+        z_host,
+        z_port,
         NULL, NULL,
-        database,
-        username,
-        password);
+        z_database,
+        z_username,
+        z_password);
     const int v = cfg_verbosity(cfg);
     PQsetErrorVerbosity(conn,
         v <= -2
@@ -78,7 +78,7 @@ db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *dat
         return NULL;
     }
 
-    cfg_log(cfg, log_info, "connected to db '%s' on %s:%s as %s\n", database, host, port, username);
+    cfg_log(cfg, log_info, "connected to db '%s' on %s:%s as %s\n", z_database, z_host, z_port, z_username);
 
     return conn2db(conn);
 }
@@ -87,10 +87,10 @@ void db_destroy(db_t *db) {
     PQfinish(db2conn(db));
 }
 
-static inline bool check_password(char const *password, char const hash[BCRYPT_HASHSIZE]) {
-    if (!password && !hash) return true;
-    if (!password || !hash) return false;
-    switch (bcrypt_checkpw(password, hash)) {
+static inline bool check_password(char const *z_password, char const z_hash[static const BCRYPT_HASHSIZE]) {
+    if (!z_password && !z_hash) return true;
+    if (!z_password || !z_hash) return false;
+    switch (bcrypt_checkpw(z_password, z_hash)) {
     case -1: errno_exit("bcrypt_checkpw");
     case 0: return true;
     default: return false;
@@ -224,7 +224,7 @@ errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *out_user)
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
+    PGresult *result = memlst_add(pmem, (dtor_fn)PQclear,
         PQexecParams(db2conn(db), "select role,user_id,member_user_name,pro_business_name from " TBL_USER " where user_id=$1",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
@@ -306,7 +306,7 @@ errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2, (char const *)&arg3 };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2, sizeof arg3 };
     int const args_fmt[array_len(args)] = { 1, 1, 1 };
-    PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
+    PGresult *result = memlst_add(pmem, (dtor_fn)PQclear,
         PQexecParams(db2conn(db), "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_INBOX " where user_id_recipient=$1 limit $2::int offset $3::int",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
@@ -339,7 +339,7 @@ errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *msg) {
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = memlst_add(pmem, (fn_dtor_t)PQclear,
+    PGresult *result = memlst_add(pmem, (dtor_fn)PQclear,
         PQexecParams(db2conn(db), "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, user_id_recipient from " TBL__MSG " where msg_id=$1",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
@@ -384,7 +384,7 @@ errstatus_t db_rm_msg(db_t *db, cfg_t *cfg, serial_t msg_id) {
     return res;
 }
 
-errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ctx) {
+errstatus_t db_transaction(db_t *db, cfg_t *cfg, transaction_fn body, void *ctx) {
     PGresult *result = PQexec(db2conn(db), "begin");
 
     errstatus_t res;
@@ -395,8 +395,7 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, fn_transaction_t body, void *ct
     } else {
         PQclear(result);
 
-        // We begun the transaction.
-
+        // We've began the transaction.
         res = body(db, cfg, ctx);
 
         // End the transaction now.

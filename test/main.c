@@ -30,7 +30,7 @@ int main(void) {
 
     memlst_t *mem = memlst_init();
 
-    cfg_t *cfg = memlst_add(&mem, (fn_dtor_t)cfg_destroy, cfg_defaults());
+    cfg_t *cfg = memlst_add(&mem, (dtor_fn)cfg_destroy, cfg_defaults());
     cfg_set_verbosity(cfg, INT_MAX);
 
     {
@@ -42,7 +42,7 @@ int main(void) {
         cfg_load_root_credentials(cfg, root_api_key, require_env(cfg, "ROOT_PASSWORD"));
     }
 
-    db_t *db = memlst_add(&mem, (fn_dtor_t)db_destroy,
+    db_t *db = memlst_add(&mem, (dtor_fn)db_destroy,
         db_connect(cfg,
             require_env(cfg, "DB_HOST"),
             require_env(cfg, "DB_PORT"),

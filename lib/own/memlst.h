@@ -33,7 +33,7 @@ void dtor_json_object(void *json_object);
 void memlst_destroy(memlst_t **memlst FILE_LINE_PARAMS);
 
 /// @brief A destructor function for memory lists.
-typedef void (*fn_dtor_t)(void *);
+typedef void (*dtor_fn)(void *);
 
 /// @brief Add an allocation to a memory list.
 /// @param memlst A memory list.
@@ -41,7 +41,7 @@ typedef void (*fn_dtor_t)(void *);
 /// @param ptr The pointer to add.
 /// @return @p ptr, or @c NULL or the system is out of memoory.
 /// @remark if @p ptr is @c NULL, this is a no-op and other parameters can be @c NULL.
-void *memlst_add(memlst_t *restrict *restrict memlst, fn_dtor_t dtor, void *restrict ptr FILE_LINE_PARAMS);
+void *memlst_add(memlst_t *restrict *restrict memlst, dtor_fn dtor, void *restrict ptr FILE_LINE_PARAMS);
 
 /// @brief Empty a memory list's allocations and runs destructors.
 /// @param memlst A memory list.

@@ -65,7 +65,7 @@ void observe_put_role(void);
 
 /// @brief Expands to the signature of a Tchattator413 test function
 /// @param name The unquoted name of the test.
-#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t * *pmem, cfg_t * cfg, db_t * db)
+#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t * *_pmem, cfg_t * _cfg, db_t * _db)
 
 #define DECLARE_TEST(name) TEST_SIGNATURE(name);
 X_TESTS(DECLARE_TEST)
@@ -73,9 +73,9 @@ X_TESTS(DECLARE_TEST)
 
 #define TEST_INIT(name) {       \
     .t = test_start(STR(name)), \
-    .cfg = cfg,                 \
-    .db = db,                   \
-    .pmem = pmem,               \
+    .pmem = _pmem,              \
+    .cfg = _cfg,                \
+    .db = _db,                  \
 };
 
 #define OUT_JSON(NAME, suffix) "test/server/json/" STR(NAME) "/out" suffix ".json"
@@ -128,9 +128,9 @@ typedef struct {
     /// @brief Backing test.
     struct test t;
     int n_actions, n_responses;
+    memlst_t **pmem;
     cfg_t *cfg;
     db_t *db;
-    memlst_t **pmem;
 } test_t;
 _Static_assert(offsetof(test_t, t) == 0, "backing test must be at start of struct for implicit base type punning");
 
@@ -171,13 +171,13 @@ bool json_object_eq_fmt(json_object *obj_actual, json_object *obj_expected);
 #define TEST_CASE_EQ_JSON_OBJECT(t, actual, expected, fmt) test_case((t), json_object_equal(actual, expected), fmt " == %s", min_json(actual))
 
 /// @brief Temporary placeholder for the representation of the UUID currently being tested for equality.
-extern char _g_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
+extern char _gd_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
 
 /// @brief Test an UUID for equality with an expected value.
 #define TEST_CASE_EQ_UUID(t, actual, expected, fmt) test_case((t), uuid4_eq(actual, expected), \
     fmt UUID4_FMT " == " UUID4_FMT,                                                            \
-    uuid4_repr(actual, _g_test_case_eq_uuid_repr + UUID4_REPR_LENGTH),                         \
-    uuid4_repr(expected, _g_test_case_eq_uuid_repr));
+    uuid4_repr(actual, _gd_test_case_eq_uuid_repr + UUID4_REPR_LENGTH),                         \
+    uuid4_repr(expected, _gd_test_case_eq_uuid_repr));
 
 /// @brief A special return value for test transaction returns.
 #define errstatus_tested (errstatus_t)(max_errstatus + 1)

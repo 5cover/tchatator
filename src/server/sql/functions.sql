@@ -9,7 +9,7 @@ create function _insert_msg (p_user_id_sender int, p_user_id_recipient int, p_co
 with msg_id as (insert into
     tchatator._msg (user_id_sender, user_id_recipient, content)
 values
-    -- condisder 0 as the admin user id.
+    -- consider 0 as the root user id.
     (nullif(p_user_id_sender, 0), p_user_id_recipient, p_content)
 returning
     msg_id
@@ -24,7 +24,7 @@ select
             select
                 full_block_expires_at < localtimestamp
             from
-                _member
+                tchatator._member
             where
                 user_id = p_user_id_sender
         )
@@ -33,19 +33,19 @@ select
             select
                 expires_at < localtimestamp
             from
-                _single_block
+                tchatator._single_block
             where
                 user_id_member = p_user_id_sender
                 and user_id_pro = p_user_id_recipient
         ) then 0 -- errstatus_error
-        else (select _insert_msg(p_user_id_sender, p_user_id_recipient, p_content))
+        else (select tchatator._insert_msg(p_user_id_sender, p_user_id_recipient, p_content))
     end
 $$ language sql strict;
 
 create function _insert_user (inout new record) as $$
 begin
     insert into
-        _user (api_key, password_hash)
+        tchatator._user (api_key, password_hash)
     values
         (new.api_key, new.password_hash)
     returning
@@ -59,7 +59,7 @@ begin
         raise 'Cannot update user_id';
     end if;
 
-    update _user
+    update tchatator._user
     set
         api_key = new.api_key,
         password_hash = new.password_hash

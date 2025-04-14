@@ -126,11 +126,11 @@ void cfg_load_from_file(cfg_t *cfg, char const *filename) {
     }
 
     if (json_object_object_get_ex(obj_cfg, "log_file", &obj)) {
-        slice_t lfn;
-        if (!json_object_get_string_strict(obj, &lfn)) {
+        slice_t log_filename;
+        if (!json_object_get_string_strict(obj, &log_filename)) {
             log(STD_LOG_STREAM, log_error, INTRO LOG_FMT_JSON_TYPE(json_type_string, json_object_get_type(obj), "log_file"));
         }
-        if (lfn.len != 1 && lfn.val[0] != '-' && !(cfg->log_file_name = strndup(lfn.val, lfn.len))) {
+        if (log_filename.len != 1 && log_filename.val[0] != '-' && !(cfg->log_file_name = strndup(log_filename.val, log_filename.len))) {
             errno_exit("strndup");
         }
     }

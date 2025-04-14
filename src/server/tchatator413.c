@@ -33,7 +33,7 @@ int tchatator413_run_interactive(cfg_t *cfg, db_t *db, int argc, char **argv) {
     CLEAN_RETURN(mem, EX_OK);
 }
 
-static inline json_object *act(json_object const *obj_action, cfg_t *cfg, db_t *db, fn_on_action_t on_action, fn_on_response_t on_response, void *on_ctx) {
+static inline json_object *act(json_object const *obj_action, cfg_t *cfg, db_t *db, on_action_fn on_action, on_response_fn on_response, void *on_ctx) {
     memlst_t *mem = memlst_init();
 
     action_t action = action_parse(&mem, cfg, db, obj_action);
@@ -45,7 +45,7 @@ static inline json_object *act(json_object const *obj_action, cfg_t *cfg, db_t *
     return response_to_json(&response);
 }
 
-json_object *tchatator413_interpret(json_object *obj_input, cfg_t *cfg, db_t *db, fn_on_action_t on_action, fn_on_response_t on_response, void *on_ctx) {
+json_object *tchatator413_interpret(json_object *obj_input, cfg_t *cfg, db_t *db, on_action_fn on_action, on_response_fn on_response, void *on_ctx) {
     json_object *obj_output;
 
     json_type const input_type = json_object_get_type(obj_input);

@@ -25,37 +25,37 @@ static inline uint8_t hex_repr_to_half(char c);
 
 #define INVALID_HALF 255
 
-#define X_42226 O O O O H O O H O O H O O H O O O O O O
+#define X_42226(O, H) O O O O H O O H O O H O O H O O O O O O
 
-char *uuid4_repr(uuid4_t uuid, char repr[static const UUID4_REPR_LENGTH]) {
+char *uuid4_repr(uuid4_t uuid, char d_repr[static const UUID4_REPR_LENGTH]) {
     size_t idata = 0, i = 0;
 #define O                                                    \
     do {                                                     \
-        repr[i++] = hex_half_to_repr(uuid.data[idata] >> 4); \
-        repr[i++] = hex_half_to_repr(uuid.data[idata] & 15); \
+        d_repr[i++] = hex_half_to_repr(uuid.data[idata] >> 4); \
+        d_repr[i++] = hex_half_to_repr(uuid.data[idata] & 15); \
         ++idata;                                             \
     } while (0);
-#define H repr[i++] = '-';
-    X_42226;
+#define H d_repr[i++] = '-';
+    X_42226(O, H);
 #undef O
 #undef H
-    return repr;
+    return d_repr;
 }
 
-bool uuid4_parse(uuid4_t *out_uuid, char const repr[static const UUID4_REPR_LENGTH]) {
+bool uuid4_parse(uuid4_t *out_uuid, char const d_repr[static const UUID4_REPR_LENGTH]) {
     size_t idata = 0, i = 0;
     uint8_t v1, v2;
 #define O                                                            \
     do {                                                             \
-        if ((v1 = hex_repr_to_half(repr[i++])) == INVALID_HALF       \
-            || (v2 = hex_repr_to_half(repr[i++])) == INVALID_HALF) { \
+        if ((v1 = hex_repr_to_half(d_repr[i++])) == INVALID_HALF       \
+            || (v2 = hex_repr_to_half(d_repr[i++])) == INVALID_HALF) { \
             return false;                                            \
         }                                                            \
         out_uuid->data[idata++] = (uint8_t)(v1 << 4) + v2;           \
     } while (0);
 #define H \
-    if (repr[i++] != '-') return false;
-    X_42226
+    if (d_repr[i++] != '-') return false;
+    X_42226(O, H)
 #undef O
 #undef H
     return true;
@@ -70,7 +70,7 @@ void uuid4_put(uuid4_t uuid, FILE *stream) {
         ++idata;                                               \
     } while (0);
 #define H putc('-', stream);
-    X_42226;
+    X_42226(O, H);
 #undef O
 #undef H
 }

@@ -23,6 +23,7 @@
 - [ ] gendoc workflow github pages from 413
 - [ ] remove JSONf. no need for a custom format. build a json object from placeholders instead. maybe using json pointers.
 - [ ] object macros for test passwords
+- [ ] turn macros in action-json into static inline functions
 
 ## bugs
 

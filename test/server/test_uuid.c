@@ -5,8 +5,8 @@
 
 #include "strings.h"
 #include "tests.h"
-#include <tchatator413/errstatus.h>
 #include "util.h"
+#include <tchatator413/errstatus.h>
 #include <tchatator413/uuid.h>
 
 struct test test_uuid4(void) {
@@ -32,24 +32,24 @@ struct test test_uuid4(void) {
         uuid4_t uuid;
         test_case(&t,
             errstatus_ok == uuid4_parse(&uuid, uuids[i]),
-            "%.*s", UUID4_REPR_LENGTH, uuids[i]);
-        char repr[UUID4_REPR_LENGTH];
+            UUID4_FMT, uuids[i]);
+        char d_repr[UUID4_REPR_LENGTH];
         test_case(&t,
-            strncasecmp(uuids[i], uuid4_repr(uuid, repr), UUID4_REPR_LENGTH) == 0,
-            "repr(%.*s) == repr(%.*s)", UUID4_REPR_LENGTH, uuids[i], UUID4_REPR_LENGTH, repr);
+            strncasecmp(uuids[i], uuid4_repr(uuid, d_repr), UUID4_REPR_LENGTH) == 0,
+            "repr(" UUID4_FMT ") == repr(" UUID4_FMT ")", uuids[i], d_repr);
         test_case(&t,
             uuid4_eq(uuid, uuid),
-            "%.*s == %.*s", UUID4_REPR_LENGTH, uuids[i], UUID4_REPR_LENGTH, repr);
+            UUID4_FMT " == " UUID4_FMT, uuids[i], d_repr);
         test_case(&t,
             !uuid4_eq(uuid, different_uuid) && !uuid4_eq(different_uuid, uuid),
-            "%.*s != different_uuid", UUID4_REPR_LENGTH, uuids[i]);
+            UUID4_FMT " != different_uuid", uuids[i]);
     }
 
     for (size_t i = 0; i < array_len(invalid_uuids); ++i) {
         uuid4_t uuid;
         test_case(&t,
             errstatus_ok != uuid4_parse(&uuid, invalid_uuids[i]),
-            "%.*s", UUID4_REPR_LENGTH, invalid_uuids[i]);
+            UUID4_FMT, invalid_uuids[i]);
     }
 
     uuid4_t const uuid0 = uuid4_of(0xf8, 0x1d, 0x4f, 0xae, 0x7d, 0xec, 0x11, 0xd0, 0xa7, 0x65, 0x00, 0xa0, 0xc9, 0x1e, 0x6b, 0xf6);

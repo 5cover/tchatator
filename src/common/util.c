@@ -47,36 +47,36 @@ char *vstrfmt(const char *fmt, va_list ap) {
 }
 
 char *fslurp(FILE *fp) {
-    char *answer;
-    char *temp;
-    size_t buffsize = 1024;
+    char *d_answer;
+    char *d_temp;
+    size_t bufsize = 1024;
     size_t i = 0;
-    int ch;
+    int c;
 
-    answer = malloc(1024);
-    if (!answer)
+    d_answer = malloc(1024);
+    if (!d_answer)
         return 0;
-    while ((ch = fgetc(fp)) != EOF) {
-        if (i == buffsize - 2) {
-            if (buffsize > INT_MAX - 100 - buffsize / 10) {
-                free(answer);
+    while ((c = fgetc(fp)) != EOF) {
+        if (i == bufsize - 2) {
+            if (bufsize > INT_MAX - 100 - bufsize / 10) {
+                free(d_answer);
                 return 0;
             }
-            buffsize = buffsize + 100 * buffsize / 10;
-            temp = realloc(answer, buffsize);
-            if (temp == 0) {
-                free(answer);
+            bufsize = bufsize + 100 * bufsize / 10;
+            d_temp = realloc(d_answer, bufsize);
+            if (d_temp == 0) {
+                free(d_answer);
                 return 0;
             }
-            answer = temp;
+            d_answer = d_temp;
         }
-        answer[i++] = (char)ch;
+        d_answer[i++] = (char)c;
     }
-    answer[i++] = 0;
+    d_answer[i++] = 0;
 
-    temp = realloc(answer, i);
-    if (temp)
-        return temp;
+    d_temp = realloc(d_answer, i);
+    if (d_temp)
+        return d_temp;
     else
-        return answer;
+        return d_answer;
 }

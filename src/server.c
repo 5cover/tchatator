@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
     memlst_t *mem = memlst_init();
 
-    cfg_t *cfg = memlst_add(&mem, (fn_dtor_t)cfg_destroy, cfg_defaults());
+    cfg_t *cfg = memlst_add(&mem, (dtor_fn)cfg_destroy, cfg_defaults());
 
     {
         api_key_t root_api_key;
@@ -46,62 +46,62 @@ int main(int argc, char **argv) {
     // Arguments
     {
         enum {
-            opt_help,
-            opt_version,
-            opt_dump_config,
-            opt_quiet = 'q',
-            opt_verbose = 'v',
-            opt_interactive = 'i',
-            opt_config = 'c',
+            OPT_HELP,
+            OPT_VERSION,
+            OPT_DUMP_CONFIG,
+            OPT_QUIET = 'q',
+            OPT_VERBOSE = 'v',
+            OPT_INTERACTIVE = 'i',
+            OPT_CONFIG = 'c',
         };
-        struct option long_options[] = {
+        struct option d_long_options[] = {
             {
                 .name = "help",
-                .val = opt_help,
+                .val = OPT_HELP,
             },
             {
                 .name = "version",
-                .val = opt_version,
+                .val = OPT_VERSION,
             },
             {
                 .name = "dump-config",
-                .val = opt_dump_config,
+                .val = OPT_DUMP_CONFIG,
             },
             {
                 .name = "quiet",
-                .val = opt_quiet,
+                .val = OPT_QUIET,
             },
             {
                 .name = "verbose",
-                .val = opt_verbose,
+                .val = OPT_VERBOSE,
             },
             {
                 .name = "interactive",
-                .val = opt_interactive,
+                .val = OPT_INTERACTIVE,
             },
             {
                 .name = "config",
-                .val = opt_config,
+                .val = OPT_CONFIG,
             },
             { 0 },
         };
 
         int opt;
-        while (-1 != (opt = getopt_long(argc, argv, "qvic:", long_options, NULL))) {
+        while (-1 != (opt = getopt_long(argc, argv, "qvic:", d_long_options, NULL))) {
             switch (opt) {
-            case opt_help:
+            case OPT_HELP:
                 puts(HELP);
                 CLEAN_RETURN(mem, EX_OK);
-            case opt_version:
+            case OPT_VERSION:
                 puts(VERSION);
                 CLEAN_RETURN(mem, EX_OK);
-            case opt_dump_config:
+            case OPT_DUMP_CONFIG:
                 dump_config = true;
                 break;
-            case opt_quiet: --verbosity; break;
-            case opt_verbose: ++verbosity; break;
-            case opt_interactive: interactive = true; break;
-            case opt_config:
+            case OPT_QUIET: --verbosity; break;
+            case OPT_VERBOSE: ++verbosity; break;
+            case OPT_INTERACTIVE: interactive = true; break;
+            case OPT_CONFIG:
                 if (cfg) {
                     cfg_log(cfg, log_error, "config already specified by previous argument\n");
                     CLEAN_RETURN(mem, EX_USAGE);
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
         CLEAN_RETURN(mem, EX_OK);
     }
 
-    db_t *db = memlst_add(&mem, (fn_dtor_t)db_destroy,
+    db_t *db = memlst_add(&mem, (dtor_fn)db_destroy,
         db_connect(cfg,
             require_env(cfg, "DB_HOST"),
             require_env(cfg, "DB_PORT"),

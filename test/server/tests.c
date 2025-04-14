@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <sysexits.h>
 
-char _g_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
+char _gd_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
 
 test_t *base_on_action(void *test) {
     test_t *t = (test_t *)test;

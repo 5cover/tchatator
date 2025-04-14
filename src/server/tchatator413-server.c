@@ -50,11 +50,11 @@ static inline void json_object_write(json_object *obj, cfg_t *cfg, int fd) {
 static inline void interpret_request(cfg_t *cfg, db_t *db, int fd) {
     cfg_log(cfg, log_info, "interpreting request from fd %d\n", fd);
 
-    char buf[BUFSIZ] = { 0 };
-    ssize_t bytes_read = read(fd, buf, sizeof buf - 1);
-    if (bytes_read > 0) buf[bytes_read] = '\0';
+    char d_buf[BUFSIZ] = { 0 };
+    ssize_t bytes_read = read(fd, d_buf, sizeof d_buf - 1);
+    if (bytes_read > 0) d_buf[bytes_read] = '\0';
 
-    json_object *obj_input = json_tokener_parse(buf);
+    json_object *obj_input = json_tokener_parse(d_buf);
     // if !obj_input : invalid JSON recieved
 
     cfg_log(cfg, log_info, "received json input, interpreting request\n");

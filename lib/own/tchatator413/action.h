@@ -46,10 +46,10 @@ typedef struct {
     union {
         struct {
             /// @brief A human-friendly representation of the location of the error in the JSON request structure.
-            char const *location;
+            char const *z_location;
             /// @brief The JSON object that is of the wrong type.
             /// @note Invariant: the type of this object is different from @ref expected.
-            json_object *obj_actual;
+            json_object *jo_actual;
             /// @brief The type @ref obj_actual should have been of.
             json_type expected;
         } type;
@@ -85,9 +85,9 @@ typedef enum {
     /// @brief Special value for an action triggered an error.
     action_type_error,
 
-#define X(name) action_type_##name,
-    X_ACTIONS(X)
-#undef X
+#define ENUM_VALUE(name) action_type_##name,
+    X_ACTIONS(ENUM_VALUE)
+#undef ENUM_VALUE
 } action_type_t;
 
 /// @brief Expands to an identifier that is the type of the action of name @p name
