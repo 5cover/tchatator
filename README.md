@@ -41,9 +41,7 @@ prefix|use for|means|example
 `out_`|out pointer parameters|this is an out parameter; the dereferenced value is undefined at the start of the function. The value may be assigned according to the function's contract. Implies `p_` after being assigned to.|`out_user`
 `g_`|globals|this is a **g**lobal variable|`g_global_state`
 `s_`|statics|this is a **s**tatic variable|`static_state`
-`p_`|dereferenceable pointers (not `void*` or opaque handles, or types not meant to be dereferenced by calling code, like `FILE*`)|this is a **p**ointer that can be dereferenced|`p_test`
-`d_`|indexable pointers or arrays: derefenceable with an offset; implies `p_`|this can be in**d**exed|`d_array`
-`z_`|null-terminated buffers: indexable, terminated by a null byte; implies `d_`|this is a null-terminated buffer|`z_string`
+`p_`|dereferenceable pointers-to-one (not `void*` or opaque handles, or types not meant to be dereferenced by calling code, like `FILE*`). Doesn not apply to arrays or strings.|this is a **p**ointer that can be dereferenced to a single value|`p_test`
 `jo_`|JSON objects (`struct json_object*`, from `json-c`)|this is a **J**SON **o**bject handle|`jo_user`
 
 Prefixes can be combined in table order (such as `gsp_` for a global static pointer).

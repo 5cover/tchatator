@@ -16,12 +16,12 @@ CheckOptions:
     value: '^s_[a-z_][a-z_0-9]*$'
 
   # Other variables:
-  # We allow an optional Hungarian prefix for pointers (p_, d_, z_, jo_) and for out parameters (out_).
+  # We allow an optional Hungarian prefix for pointers (p_, jo_) and for out parameters (out_).
   # Note: clang-tidy cannot distinguish pointer types from other types.
   - key: readability-identifier-naming.VariableCase
     value: lower_case
   - key: readability-identifier-naming.VariableRegex
-    value: '^((out_|p_|d_|z_|jo_)?[a-z_][a-z_0-9]*)$'
+    value: '^((out|p|jo)+_)?[a-z_][a-z_0-9]*)$'
 
   # Function parameters:
   # When a parameter is an out pointer, the convention is to use "out_", so we allow an optional "out_" prefix.
@@ -60,7 +60,7 @@ CheckOptions:
 
 # Additional notes:
 # - Function-like macro detection is not supported by clang-tidy; all macros are checked against the same rules.
-# - Enforcement of pointer-specific Hungarian notation (e.g. for out_, p_, d_, z_, jo_) is performed solely by the regex,
+# - Enforcement of pointer-specific Hungarian notation (e.g. for out_, p_, jo_) is performed solely by the regex,
 #   without any semantic check on the pointer type.
 # - Enum min/max naming (min_<prefix> and max_<prefix>) and X-macro conventions cannot be enforced automatically.
 # - There is no way to validate that unsigned types are used only for sizes and port numbers.

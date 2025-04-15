@@ -96,9 +96,9 @@ static errstatus_t transaction(db_t *db, cfg_t *cfg, void *ctx) {
             tchatator413_interpret(jo_input, cfg, db, on_action, on_response, p_tst));
 
         test_case_n_actions(p_tst, 1);
-        json_object *obj_expected_output = memlst_add(p_tst->pmem, dtor_json_object,
+        json_object *jo_expected_output = memlst_add(p_tst->pmem, dtor_json_object,
             load_jsonf(OUT_JSONF(NAME, "_send"), gs_msg_id));
-        if (!test_output_json(&p_tst->t, jo_output, obj_expected_output)) return errstatus_tested;
+        if (!test_output_json(&p_tst->t, jo_output, jo_expected_output)) return errstatus_tested;
     }
 
     // Pro queries inbox
@@ -107,9 +107,9 @@ static errstatus_t transaction(db_t *db, cfg_t *cfg, void *ctx) {
         json_object *jo_output = tchatator413_interpret(jo_input, cfg, db, on_action, on_response, p_tst);
 
         test_case_n_actions(p_tst, 2);
-        json_object *obj_expected_output = load_jsonf(OUT_JSONF(NAME, "_inbox"), gs_msg_id, gs_msg_sent_at);
-        test_output_json(&p_tst->t, jo_output, obj_expected_output);
-        json_object_put(obj_expected_output);
+        json_object *jo_expected_output = load_jsonf(OUT_JSONF(NAME, "_inbox"), gs_msg_id, gs_msg_sent_at);
+        test_output_json(&p_tst->t, jo_output, jo_expected_output);
+        json_object_put(jo_expected_output);
 
         json_object_put(jo_input);
         json_object_put(jo_output);
