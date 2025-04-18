@@ -19,7 +19,7 @@ response_t response_for_rate_limit(time_t next_request_at) {
     };
 }
 
-response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, db_t *db) {
+response_t action_evaluate(action_t const *p_action, memlst_t **pmem, cfg_t *cfg, db_t *db) {
     response_t rep = { 0 };
 
 #define fail(return_status)                               \
@@ -43,21 +43,21 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
     // Identify user
     user_identity_t user;
 
-    switch (rep.type = action->type) {
+    switch (rep.type = p_action->type) {
     case action_type_error: {
-        rep.body.error = action->with.error;
+        rep.body.error = p_action->with.error;
         return rep;
     }
 
 #define DO whois
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
         }
 
-        rep.body.DO.user.id = action->with.DO.user_id;
+        rep.body.DO.user.id = p_action->with.DO.user_id;
         switch (db_get_user(db, pmem, cfg, &rep.body.DO.user)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_not_found);
@@ -67,32 +67,34 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO send
     case ACTION_TYPE(DO): {
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
         }
 
         int dest_role;
-        switch (dest_role = db_get_user_role(db, cfg, action->with.DO.dest_user_id)) {
+        switch (dest_role = db_get_user_role(db, cfg, p_action->with.DO.dest_user_id)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_not_found);
+        default:;
         }
 
         // if message length is greater than maximum
-        if (action->with.DO.content.len > cfg_max_msg_length(cfg)) fail(status_payload_too_large);
+        if (p_action->with.DO.content.len > cfg_max_msg_length(cfg)) fail(status_payload_too_large);
 
         // if sender and dest are the same user
-        if (user.id == action->with.DO.dest_user_id) fail_invariant("no_send_self");
+        if (user.id == p_action->with.DO.dest_user_id) fail_invariant("no_send_self");
         // if user is client and dest is not pro
         if (user.role & role_member && !(dest_role & role_pro)) fail_invariant("client_send_pro");
         // if user is pro and dest is not a client or dest hasn't contacted pro user first
-        if (user.role & role_pro && (!(dest_role & role_member) || !db_count_msg(db, cfg, action->with.DO.dest_user_id, user.id)))
+        if (user.role & role_pro && (!(dest_role & role_member) || !db_count_msg(db, cfg, p_action->with.DO.dest_user_id, user.id)))
             fail_invariant("pro_responds_client");
 
-        switch (rep.body.DO.msg_id = db_send_msg(db, cfg, user.id, action->with.DO.dest_user_id, action->with.DO.content.val)) {
+        switch (rep.body.DO.msg_id = db_send_msg(db, cfg, user.id, p_action->with.DO.dest_user_id, p_action->with.DO.content.val)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_forbidden);
+        default:;
         }
 
         break;
@@ -100,7 +102,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO motd
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -110,20 +112,20 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO inbox
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
         }
 
-        if (errstatus_ok != db_get_inbox(db, pmem, cfg, cfg_page_inbox(cfg), cfg_page_inbox(cfg) * (action->with.DO.page - 1), user.id, &rep.body.DO)) {
+        if (errstatus_ok != db_get_inbox(db, pmem, cfg, cfg_page_inbox(cfg), cfg_page_inbox(cfg) * (p_action->with.DO.page - 1), user.id, &rep.body.DO)) {
             fail(status_internal_server_error);
         }
         break;
 #undef DO
 #define DO outbox
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -133,7 +135,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO edit
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
@@ -143,13 +145,13 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO rm
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_all);
         }
 
-        switch (db_rm_msg(db, cfg, action->with.DO.msg_id)) {
+        switch (db_rm_msg(db, cfg, p_action->with.DO.msg_id)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_not_found);
         default: check_role(role_all);
@@ -159,7 +161,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO block
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_admin | role_pro);
@@ -169,7 +171,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO unblock
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_admin | role_pro);
@@ -179,7 +181,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO ban
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_admin | role_pro);
@@ -189,7 +191,7 @@ response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, 
 #undef DO
 #define DO unban
     case ACTION_TYPE(DO):
-        switch (db_verify_user_constr(db, cfg, &user, action->with.DO.constr)) {
+        switch (db_verify_user_constr(db, cfg, &user, p_action->with.DO.constr)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_unauthorized);
         default: check_role(role_admin | role_pro);

@@ -4,28 +4,29 @@
 /// @date 1/02/2025
 
 #include "tests.h"
+#include "json-c.h"
 #include "tchatator413/json-helpers.h"
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sysexits.h>
 
-char _gd_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
+char ig_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
 
 test_t *base_on_action(void *test) {
-    test_t *t = (test_t *)test;
-    ++t->n_actions;
-    return t;
+    test_t *p_test = (test_t *)test;
+    ++p_test->n_actions;
+    return p_test;
 }
 
 test_t *base_on_response(void *test) {
-    test_t *t = (test_t *)test;
-    ++t->n_responses;
-    return t;
+    test_t *p_test = (test_t *)test;
+    ++p_test->n_responses;
+    return p_test;
 }
 
-void test_case_n_actions(test_t *test, int expected) {
-    test_case_count(&test->t, test->n_actions, expected, "action");
-    test_case_count(&test->t, test->n_responses, expected, "response");
+void test_case_n_actions(test_t *p_test, int expected) {
+    test_case_count(&p_test->t, p_test->n_actions, expected, "action");
+    test_case_count(&p_test->t, p_test->n_responses, expected, "response");
 }
 
 static inline char const *json_object_get_fmt(json_object *jo) {
@@ -121,7 +122,7 @@ bool json_object_eq_fmt(json_object *jo_actual, json_object *jo_expected) {
     }
 }
 
-bool test_output_json_file(test_t *test, json_object *jo_output, char const *expected_output_filename) {
+bool test_output_json_file(test_t *p_test, json_object *jo_output, char const *expected_output_filename) {
     json_object *jo_output_expected = json_object_from_file(expected_output_filename);
     if (!jo_output_expected) {
         fprintf(stderr, LOG_FMT_JSON_C("failed to parse test output JSON file at '%s'", expected_output_filename));
@@ -130,5 +131,5 @@ bool test_output_json_file(test_t *test, json_object *jo_output, char const *exp
 
     bool ok = json_object_eq_fmt(jo_output, jo_output_expected);
     json_object_put(jo_output_expected);
-    return test_case_wide(&test->t, ok, "%s == cat %s", min_json(jo_output), expected_output_filename);
+    return test_case_wide(&p_test->t, ok, "%s == cat %s", min_json(jo_output), expected_output_filename);
 }

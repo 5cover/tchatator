@@ -184,17 +184,17 @@ void put_role(role_t role, FILE *stream);
 action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *jo);
 
 /// @brief Evaluate an action.
-/// @param action The action to evaluate.
+/// @param p_action The action to evaluate.
 /// @param pmem Parent memory container.
 /// @param cfg The configuration.
 /// @param db The database connection.
 /// @return The response to the action.
-response_t action_evaluate(action_t const *action, memlst_t **pmem, cfg_t *cfg, db_t *db);
+response_t action_evaluate(action_t const *p_action, memlst_t **pmem, cfg_t *cfg, db_t *db);
 
 /// @brief Convert an action response to JSON.
-/// @param response The action response.
+/// @param p_response The action response.
 /// @return A new JSON object.
-json_object *response_to_json(response_t *response);
+json_object *response_to_json(response_t const *p_response);
 
 #ifndef NDEBUG
 /// @brief Explain an action.

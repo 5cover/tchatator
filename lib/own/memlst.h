@@ -28,24 +28,24 @@ memlst_t *memlst_init(void);
 void dtor_json_object(void *jo);
 
 /// @brief Destroy a memory list. Free all allocated memory, including memory for the memory list itself.
-/// @param memlst A memory list.
-/// @remark @p memlst points to invalid memory after calling this function.
-void memlst_destroy(memlst_t **memlst FILE_LINE_PARAMS);
+/// @param p_memlst Pointer to a memory list.
+/// @remark @p p_memlst points to invalid memory after calling this function.
+void memlst_destroy(memlst_t **p_memlst FILE_LINE_PARAMS);
 
 /// @brief A destructor function for memory lists.
 typedef void (*dtor_fn)(void *);
 
 /// @brief Add an allocation to a memory list.
-/// @param memlst A memory list.
+/// @param p_memlst Pointer to a memory list.
 /// @param dtor The destructor function to add on cleanup.
 /// @param ptr The pointer to add.
 /// @return @p ptr, or @c NULL or the system is out of memoory.
 /// @remark if @p ptr is @c NULL, this is a no-op and other parameters can be @c NULL.
-void *memlst_add(memlst_t *restrict *restrict memlst, dtor_fn dtor, void *restrict ptr FILE_LINE_PARAMS);
+void *memlst_add(memlst_t *restrict *restrict p_memlst, dtor_fn dtor, void *restrict ptr FILE_LINE_PARAMS);
 
 /// @brief Empty a memory list's allocations and runs destructors.
-/// @param memlst A memory list.
-void memlst_collect(memlst_t **memlst FILE_LINE_PARAMS);
+/// @param p_memlst Pointer to a memory list.
+void memlst_collect(memlst_t **p_memlst FILE_LINE_PARAMS);
 
 #if !defined MEMLST_IMPL && defined MEMLST_TRACE
 #define memlst_destroy(memlst) memlst_destroy(memlst, __FILE__, __LINE__)

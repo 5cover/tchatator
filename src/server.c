@@ -3,14 +3,14 @@
 /// @brief Tchatator413 server - Main program
 /// @date 23/01/2025
 
-#include <assert.h>
-#include <getopt.h>
 #include "memlst.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include "tchatator413/cfg.h"
 #include "tchatator413/tchatator413.h"
 #include "util.h"
+#include <assert.h>
+#include <getopt.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 /* to run it
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
             OPT_INTERACTIVE = 'i',
             OPT_CONFIG = 'c',
         };
-        struct option d_long_options[] = {
+        struct option long_options[] = {
             {
                 .name = "help",
                 .val = OPT_HELP,
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
         };
 
         int opt;
-        while (-1 != (opt = getopt_long(argc, argv, "qvic:", d_long_options, NULL))) {
+        while (-1 != (opt = getopt_long(argc, argv, "qvic:", long_options, NULL))) {
             switch (opt) {
             case OPT_HELP:
                 puts(HELP);
@@ -109,6 +109,8 @@ int main(int argc, char **argv) {
             case '?':
                 puts(HELP);
                 CLEAN_RETURN(mem, EX_USAGE);
+            default:
+                unreachable();
             }
         }
     }

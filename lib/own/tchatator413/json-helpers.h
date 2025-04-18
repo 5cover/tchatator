@@ -30,33 +30,33 @@
 
 /// @brief Get the 16-bit unsigned integer value of a JSON object.
 /// @param jo The JSON object to get the value of.
-/// @param out Assigned to the integer value of the object. Pass @c NULL to only check the type.
+/// @param out_value Assigned to the integer value of the object. Pass @c NULL to only check the type.
 /// @return @c true when @p jo is of the integer type.
 /// @return @c false otherwise. @p out is untouched.
 /// @remark Values are clamped between @c 0 and @ref UINT16_MAX.
-bool json_object_get_uint16_strict(json_object const *jo, uint16_t *out);
+bool json_object_get_uint16_strict(json_object const *jo, uint16_t *out_value);
 
 /// @brief Get the 32-bit integer value of a JSON object.
 /// @param jo The JSON object to get the value of.
-/// @param out Assigned to the integer value of the object. Pass @c NULL to only check the type.
+/// @param out_value Assigned to the integer value of the object. Pass @c NULL to only check the type.
 /// @return @c true when @p jo is of the integer type.
 /// @return @c false otherwise. @p out is untouched.
 /// @remark Values are clamped between @ref INT32_MIN and @ref INT32_MAX.
-bool json_object_get_int_strict(json_object const *jo, int32_t *out);
+bool json_object_get_int_strict(json_object const *jo, int32_t *out_value);
 
 /// @brief Get the 64-bit integer value of a JSON object.
 /// @param jo The JSON object to get the value of.
-/// @param out Assigned to the integer value of the object. Pass @c NULL to only check the type.
+/// @param out_value Assigned to the integer value of the object. Pass @c NULL to only check the type.
 /// @return @c true when @p jo is of the integer type.
 /// @return @c false otherwise. @p out is untouched.
 /// @remark Values are clamped between @ref INT64_MIN and @ref INT64_MAX.
-bool json_object_get_int64_strict(json_object const *jo, int64_t *out);
+bool json_object_get_int64_strict(json_object const *jo, int64_t *out_value);
 
 /// @brief Get the string value of a JSON object.
 /// @param jo The JSON object to get the value of.
-/// @param out Assigned to the string value of the object. Pass @c NULL to only check the type. The returned slice is null-terminated, but the null terminator is not included in the length.
+/// @param out_value Assigned to the string value of the object. Pass @c NULL to only check the type. The returned slice is null-terminated, but the null terminator is not included in the length.
 /// @return @c true when @p jo is of the string type.
 /// @return @c false otherwise.  @p out is untouched.
-bool json_object_get_string_strict(json_object *jo, slice_t *out);
+bool json_object_get_string_strict(json_object *jo, slice_t *out_value);
 
 #endif // JSON_HELPERS

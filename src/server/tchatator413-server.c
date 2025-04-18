@@ -50,11 +50,11 @@ static inline void json_object_write(json_object *jo, cfg_t *cfg, int fd) {
 static inline void interpret_request(cfg_t *cfg, db_t *db, int fd) {
     cfg_log(cfg, log_info, "interpreting request from fd %d\n", fd);
 
-    char d_buf[BUFSIZ] = { 0 };
-    ssize_t bytes_read = read(fd, d_buf, sizeof d_buf - 1);
-    if (bytes_read > 0) d_buf[bytes_read] = '\0';
+    char buf[BUFSIZ] = { 0 };
+    ssize_t bytes_read = read(fd, buf, sizeof buf - 1);
+    if (bytes_read > 0) buf[bytes_read] = '\0';
 
-    json_object *jo_input = json_tokener_parse(d_buf);
+    json_object *jo_input = json_tokener_parse(buf);
     // if !jo_input : invalid JSON recieved
 
     cfg_log(cfg, log_info, "received json input, interpreting request\n");
@@ -94,19 +94,19 @@ static inline time_t turnstile_rate_limit(cfg_t *cfg, turnstile_entry *turnstile
         return 0;
     }
 
-    user_stats_t *stats = &turnstile[i].value;
+    user_stats_t *p_stats = &turnstile[i].value;
 
-    time_t time_since_last_request = t - stats->last_request_at;
-    stats->last_request_at = t;
+    time_t time_since_last_request = t - p_stats->last_request_at;
+    p_stats->last_request_at = t;
 
-    if (time_since_last_request >= 60) stats->n_requests_m = 0;
-    if (time_since_last_request >= 3600) stats->n_requests_h = 0;
+    if (time_since_last_request >= 60) p_stats->n_requests_m = 0;
+    if (time_since_last_request >= 3600) p_stats->n_requests_h = 0;
 
-    ++stats->n_requests_m;
-    ++stats->n_requests_h;
+    ++p_stats->n_requests_m;
+    ++p_stats->n_requests_h;
 
-    if (stats->n_requests_m >= cfg_rate_limit_m(cfg)) return t + 60 - time_since_last_request;
-    if (stats->n_requests_h >= cfg_rate_limit_h(cfg)) return t + 3600 - time_since_last_request;
+    if (p_stats->n_requests_m >= cfg_rate_limit_m(cfg)) return t + 60 - time_since_last_request;
+    if (p_stats->n_requests_h >= cfg_rate_limit_h(cfg)) return t + 3600 - time_since_last_request;
     return 0;
 }
 

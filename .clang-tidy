@@ -20,12 +20,14 @@ Checks: |
   -modernize*,
   -readability-avoid-nested-conditional-operator,
   -readability-braces-around-statements,
+  -readability-enum-initial-value,
   -readability-function-cognitive-complexity,
   -readability-function-size,
   -readability-identifier-length,
   -readability-implicit-bool-conversion,
   -readability-isolate-declaration,
   -readability-magic-numbers,
+  -readability-math-missing-parentheses,
   -misc-no-recursion,
 
 CheckOptions:
@@ -37,9 +39,9 @@ CheckOptions:
     value: lower_case
 
   - key: readability-identifier-naming.GlobalVariableRegex
-    value: '^gs?p?_[a-z_][a-z_0-9]*$'
+    value: '^i?gs?p?_[a-z_][a-z_0-9]*$'
   - key: readability-identifier-naming.StaticVariableRegex
-    value: '^g?sp?_[a-z_][a-z_0-9]*$'
+    value: '^i?g?sp?_[a-z_][a-z_0-9]*$'
   #- key: readability-identifier-naming.GlobalPointerRegex
   #  value: '^gs?p_[a-z_][a-z_0-9]*$'
   #- key: readability-identifier-naming.LocalPointerRegex

@@ -12,8 +12,7 @@
 /// @return @ref serial_t The user ID.
 /// @return @ref errstatus_handled An error occured and was handled.
 /// @return @ref errstatus_error Invalid user key.
-static inline serial_t
-get_user_id(cfg_t *cfg, db_t *db, json_object *jo_user) {
+static inline serial_t get_user_id(cfg_t *cfg, db_t *db, json_object *jo_user) {
     switch (json_object_get_type(jo_user)) {
     case json_type_int: {
         serial_t maybe_user_id = json_object_get_int(jo_user);
@@ -129,11 +128,11 @@ action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *
         switch (*(out_value) = get_user_id(cfg, db, jo)) {                        \
         case errstatus_error: fail_invalid(arg_loc(key), jo, "invalid user key"); \
         case errstatus_handled: fail();                                           \
-        case errstatus_ok:;                                                       \
+        default:;                                                                 \
         }                                                                         \
     } while (0)
 #define getarg_page(jo, key, out_value)                                \
-    do { /* temporary fix to make optional arguments */                \
+    do {                                                               \
         if (json_object_object_get_ex(jo_with, key, &(jo))) {          \
             getarg_int(jo, key, out_value);                            \
             if (*(out_value) < 1) {                                    \
@@ -265,39 +264,39 @@ action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *
 
 #define add_key(o, k, v) json_object_object_add_ex(o, k, v, JSON_C_OBJECT_ADD_KEY_IS_NEW | JSON_C_OBJECT_KEY_IS_CONSTANT)
 
-static json_object *msg_to_json_object(msg_t const *msg) {
+static json_object *msg_to_json_object(msg_t msg) {
     json_object *jo = json_object_new_object();
-    add_key(jo, "msg_id", json_object_new_int(msg->id));
-    add_key(jo, "sent_at", json_object_new_int64(msg->sent_at));
-    add_key(jo, "content", json_object_new_string(msg->content));
-    add_key(jo, "sender", json_object_new_int(msg->user_id_sender));
-    add_key(jo, "recipient", json_object_new_int(msg->user_id_recipient));
-    if (msg->deleted_age) add_key(jo, "deleted_age", json_object_new_int(msg->deleted_age));
-    if (msg->read_age) add_key(jo, "read_age", json_object_new_int(msg->read_age));
-    if (msg->edited_age) add_key(jo, "edited_age", json_object_new_int(msg->edited_age));
+    add_key(jo, "msg_id", json_object_new_int(msg.id));
+    add_key(jo, "sent_at", json_object_new_int64(msg.sent_at));
+    add_key(jo, "content", json_object_new_string(msg.content));
+    add_key(jo, "sender", json_object_new_int(msg.user_id_sender));
+    add_key(jo, "recipient", json_object_new_int(msg.user_id_recipient));
+    if (msg.deleted_age) add_key(jo, "deleted_age", json_object_new_int(msg.deleted_age));
+    if (msg.read_age) add_key(jo, "read_age", json_object_new_int(msg.read_age));
+    if (msg.edited_age) add_key(jo, "edited_age", json_object_new_int(msg.edited_age));
     return jo;
 }
 
-json_object *response_to_json(response_t *response) {
+json_object *response_to_json(response_t const *p_response) {
     json_object *jo_body = NULL, *jo_error = NULL;
 
-    switch (response->type) {
+    switch (p_response->type) {
     case action_type_error: {
         status_t status;
         jo_error = json_object_new_object();
-        switch (response->body.error.type) {
+        switch (p_response->body.error.type) {
         case action_error_type_type: {
             status = status_bad_request;
-            json_object *jo_actual = response->body.error.info.type.jo_actual;
+            json_object *jo_actual = p_response->body.error.info.type.jo_actual;
             json_type actual_type = json_object_get_type(jo_actual);
             char *msg = actual_type == json_type_null
                 ? strfmt("%s: expected %s, got %s",
-                      response->body.error.info.type.location,
-                      json_type_to_name(response->body.error.info.type.expected),
+                      p_response->body.error.info.type.location,
+                      json_type_to_name(p_response->body.error.info.type.expected),
                       json_type_to_name(actual_type))
                 : strfmt("%s: expected %s, got %s: %s",
-                      response->body.error.info.type.location,
-                      json_type_to_name(response->body.error.info.type.expected),
+                      p_response->body.error.info.type.location,
+                      json_type_to_name(p_response->body.error.info.type.expected),
                       json_type_to_name(actual_type),
                       min_json(jo_actual));
             if (msg) add_key(jo_error, "message", json_object_new_string(msg));
@@ -306,27 +305,27 @@ json_object *response_to_json(response_t *response) {
         }
         case action_error_type_missing_key: {
             status = status_bad_request;
-            char *msg = strfmt("%s: key missing", response->body.error.info.missing_key.location);
+            char *msg = strfmt("%s: key missing", p_response->body.error.info.missing_key.location);
             if (msg) add_key(jo_error, "message", json_object_new_string(msg));
             free(msg);
             break;
         }
         case action_error_type_invalid: {
             status = status_bad_request;
-            char *msg = strfmt("%s: %s: %s", response->body.error.info.invalid.location,
-                response->body.error.info.invalid.reason,
-                json_object_to_json_string(response->body.error.info.invalid.jo_bad));
+            char *msg = strfmt("%s: %s: %s", p_response->body.error.info.invalid.location,
+                p_response->body.error.info.invalid.reason,
+                json_object_to_json_string(p_response->body.error.info.invalid.jo_bad));
             if (msg) add_key(jo_error, "message", json_object_new_string(msg));
             free(msg);
             break;
         }
         case action_error_type_other: {
-            status = response->body.error.info.other.status;
+            status = p_response->body.error.info.other.status;
             break;
         }
         case action_error_type_rate_limit: {
             status = status_too_many_requests;
-            add_key(jo_error, "next_request_at", json_object_new_int64(response->body.error.info.rate_limit.next_request_at));
+            add_key(jo_error, "next_request_at", json_object_new_int64(p_response->body.error.info.rate_limit.next_request_at));
             break;
         }
         default: unreachable();
@@ -336,21 +335,21 @@ json_object *response_to_json(response_t *response) {
     }
     case action_type_whois: {
         jo_body = json_object_new_object();
-        user_t *user = &response->body.whois.user;
-        add_key(jo_body, "user_id", json_object_new_int(user->id));
+        user_t const *p_user = &p_response->body.whois.user;
+        add_key(jo_body, "user_id", json_object_new_int(p_user->id));
         json_object *jo_role = json_object_new_object();
         const char *role_key;
-        switch (user->role) {
+        switch (p_user->role) {
         case role_admin:
             role_key = "admin";
             break;
         case role_member:
             role_key = "member";
-            add_key(jo_role, "user_name", json_object_new_string(user->member.user_name));
+            add_key(jo_role, "user_name", json_object_new_string(p_user->member.user_name));
             break;
         case role_pro:
             role_key = "pro";
-            add_key(jo_role, "business_name", json_object_new_string(user->pro.business_name));
+            add_key(jo_role, "business_name", json_object_new_string(p_user->pro.business_name));
             break;
         default:
             unreachable();
@@ -360,7 +359,7 @@ json_object *response_to_json(response_t *response) {
     }
     case action_type_send:
         jo_body = json_object_new_object();
-        add_key(jo_body, "msg_id", json_object_new_int(response->body.send.msg_id));
+        add_key(jo_body, "msg_id", json_object_new_int(p_response->body.send.msg_id));
         break;
     case action_type_motd:
 
@@ -368,8 +367,8 @@ json_object *response_to_json(response_t *response) {
     case action_type_inbox: {
         jo_body = json_object_new_array();
 
-        for (size_t i = 0; i < response->body.inbox.n_msgs; ++i) {
-            json_object_array_add(jo_body, msg_to_json_object(&response->body.inbox.msgs[i]));
+        for (size_t i = 0; i < p_response->body.inbox.n_msgs; ++i) {
+            json_object_array_add(jo_body, msg_to_json_object(p_response->body.inbox.msgs[i]));
         }
         break;
     }
@@ -399,7 +398,7 @@ json_object *response_to_json(response_t *response) {
 
     json_object *jo = json_object_new_object();
 
-    if (response->has_next_page) add_key(jo, "has_next_page", json_object_new_boolean(true));
+    if (p_response->has_next_page) add_key(jo, "has_next_page", json_object_new_boolean(true));
     if (jo_body) add_key(jo, "body", jo_body);
     if (jo_error) add_key(jo, "error", jo_error);
 

@@ -81,22 +81,22 @@ static inline FILE *open_log_file(cfg_t *cfg) {
 }
 
 cfg_t *cfg_defaults(void) {
-    cfg_t *cfg = malloc(sizeof *cfg);
-    if (!cfg) errno_exit("malloc");
+    cfg_t *p_cfg = malloc(sizeof *p_cfg);
+    if (!p_cfg) errno_exit("malloc");
 
-    cfg->log_file = STD_LOG_STREAM;
-    cfg->log_file_name = NULL;
-    cfg->verbosity = 0;
+    p_cfg->log_file = STD_LOG_STREAM;
+    p_cfg->log_file_name = NULL;
+    p_cfg->verbosity = 0;
 
-    cfg->backlog = 1;
-    cfg->block_for = 86400;
-    cfg->max_msg_length = 1000;
-    cfg->page_inbox = 20;
-    cfg->page_outbox = 20;
-    cfg->port = 4113;
-    cfg->rate_limit_h = 90;
-    cfg->rate_limit_m = 12;
-    return cfg;
+    p_cfg->backlog = 1;
+    p_cfg->block_for = 86400;
+    p_cfg->max_msg_length = 1000;
+    p_cfg->page_inbox = 20;
+    p_cfg->page_outbox = 20;
+    p_cfg->port = 4113;
+    p_cfg->rate_limit_h = 90;
+    p_cfg->rate_limit_m = 12;
+    return p_cfg;
 }
 
 void cfg_load_root_credentials(cfg_t *cfg, uuid4_t root_api_key, const char *root_password) {

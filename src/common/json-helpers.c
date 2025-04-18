@@ -11,29 +11,29 @@ static inline uint16_t clamp_uint16(int32_t x) {
     return t > UINT16_MAX ? UINT16_MAX : (uint16_t)t;
 }
 
-bool json_object_get_uint16_strict(json_object const *jo, uint16_t *out) {
+bool json_object_get_uint16_strict(json_object const *jo, uint16_t *out_value) {
     if (!json_object_is_type(jo, json_type_int)) return false;
-    if (out) *out = clamp_uint16(json_object_get_int(jo));
+    if (out_value) *out_value = clamp_uint16(json_object_get_int(jo));
     return true;
 }
 
-bool json_object_get_int_strict(json_object const *jo, int32_t *out) {
+bool json_object_get_int_strict(json_object const *jo, int32_t *out_value) {
     if (!json_object_is_type(jo, json_type_int)) return false;
-    if (out) *out = json_object_get_int(jo);
+    if (out_value) *out_value = json_object_get_int(jo);
     return true;
 }
 
-bool json_object_get_int64_strict(json_object const *jo, int64_t *out) {
+bool json_object_get_int64_strict(json_object const *jo, int64_t *out_value) {
     if (!json_object_is_type(jo, json_type_int)) return false;
-    if (out) *out = json_object_get_int64(jo);
+    if (out_value) *out_value = json_object_get_int64(jo);
     return true;
 }
 
-bool json_object_get_string_strict(json_object *jo, slice_t *out) {
+bool json_object_get_string_strict(json_object *jo, slice_t *out_value) {
     if (!json_object_is_type(jo, json_type_string)) return false;
-    if (out) {
-        out->len = (size_t)json_object_get_string_len(jo);
-        out->val = json_object_get_string(jo);
+    if (out_value) {
+        out_value->len = (size_t)json_object_get_string_len(jo);
+        out_value->val = json_object_get_string(jo);
     }
     return true;
 }

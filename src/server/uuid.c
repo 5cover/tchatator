@@ -27,34 +27,34 @@ static inline uint8_t hex_repr_to_half(char c);
 
 #define X_42226(O, H) O O O O H O O H O O H O O H O O O O O O
 
-char *uuid4_repr(uuid4_t uuid, char d_repr[static const UUID4_REPR_LENGTH]) {
+char *uuid4_repr(uuid4_t uuid, char repr[static const UUID4_REPR_LENGTH]) {
     size_t idata = 0, i = 0;
 #define O                                                    \
     do {                                                     \
-        d_repr[i++] = hex_half_to_repr(uuid.data[idata] >> 4); \
-        d_repr[i++] = hex_half_to_repr(uuid.data[idata] & 15); \
+        repr[i++] = hex_half_to_repr(uuid.data[idata] >> 4); \
+        repr[i++] = hex_half_to_repr(uuid.data[idata] & 15); \
         ++idata;                                             \
     } while (0);
-#define H d_repr[i++] = '-';
+#define H repr[i++] = '-';
     X_42226(O, H);
 #undef O
 #undef H
-    return d_repr;
+    return repr;
 }
 
-bool uuid4_parse(uuid4_t *out_uuid, char const d_repr[static const UUID4_REPR_LENGTH]) {
+bool uuid4_parse(uuid4_t *out_uuid, char const repr[static const UUID4_REPR_LENGTH]) {
     size_t idata = 0, i = 0;
     uint8_t v1, v2;
 #define O                                                            \
     do {                                                             \
-        if ((v1 = hex_repr_to_half(d_repr[i++])) == INVALID_HALF       \
-            || (v2 = hex_repr_to_half(d_repr[i++])) == INVALID_HALF) { \
+        if ((v1 = hex_repr_to_half(repr[i++])) == INVALID_HALF       \
+            || (v2 = hex_repr_to_half(repr[i++])) == INVALID_HALF) { \
             return false;                                            \
         }                                                            \
         out_uuid->data[idata++] = (uint8_t)(v1 << 4) + v2;           \
     } while (0);
 #define H \
-    if (d_repr[i++] != '-') return false;
+    if (repr[i++] != '-') return false;
     X_42226(O, H)
 #undef O
 #undef H

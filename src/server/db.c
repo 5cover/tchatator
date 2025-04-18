@@ -53,14 +53,14 @@ _Static_assert(sizeof(db_t) == sizeof(PGconn *));
 #define db2conn(db) (PGconn *)(db)
 #define conn2db(conn) (db_t *)(conn)
 
-db_t *db_connect(cfg_t *cfg, char const *z_host, char const *z_port, char const *z_database, char const *z_username, char const *z_password) {
+db_t *db_connect(cfg_t *cfg, char const *host, char const *port, char const *database, char const *username, char const *password) {
     PGconn *conn = PQsetdbLogin(
-        z_host,
-        z_port,
+        host,
+        port,
         NULL, NULL,
-        z_database,
-        z_username,
-        z_password);
+        database,
+        username,
+        password);
     const int v = cfg_verbosity(cfg);
     PQsetErrorVerbosity(conn,
         v <= -2
@@ -78,7 +78,7 @@ db_t *db_connect(cfg_t *cfg, char const *z_host, char const *z_port, char const 
         return NULL;
     }
 
-    cfg_log(cfg, log_info, "connected to db '%s' on %s:%s as %s\n", z_database, z_host, z_port, z_username);
+    cfg_log(cfg, log_info, "connected to db '%s' on %s:%s as %s\n", database, host, port, username);
 
     return conn2db(conn);
 }
@@ -87,10 +87,10 @@ void db_destroy(db_t *db) {
     PQfinish(db2conn(db));
 }
 
-static inline bool check_password(char const *z_password, char const z_hash[static const BCRYPT_HASHSIZE]) {
-    if (!z_password && !z_hash) return true;
-    if (!z_password || !z_hash) return false;
-    switch (bcrypt_checkpw(z_password, z_hash)) {
+static inline bool check_password(char const *password, char const hash[static const BCRYPT_HASHSIZE]) {
+    if (!password && !hash) return true;
+    if (!password || !hash) return false;
+    switch (bcrypt_checkpw(password, hash)) {
     case -1: errno_exit("bcrypt_checkpw");
     case 0: return true;
     default: return false;
@@ -219,8 +219,8 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
     return res;
 }
 
-errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *out_user) {
-    uint32_t const arg1 = pq_send_l(out_user->id);
+errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *p_user) {
+    uint32_t const arg1 = pq_send_l(p_user->id);
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
@@ -236,19 +236,19 @@ errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *out_user)
         return errstatus_error;
     }
 
-    out_user->role = pq_recv_l(role_t, PQgetvalue(result, 0, 0));
-    out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 1));
-    switch (out_user->role) {
+    p_user->role = pq_recv_l(role_t, PQgetvalue(result, 0, 0));
+    p_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 1));
+    switch (p_user->role) {
     case role_admin:
         return errstatus_ok;
     case role_member:
-        out_user->member.user_name = PQgetvalue(result, 0, 2);
+        p_user->member.user_name = PQgetvalue(result, 0, 2);
         return errstatus_ok;
     case role_pro:
-        out_user->pro.business_name = PQgetvalue(result, 0, 3);
+        p_user->pro.business_name = PQgetvalue(result, 0, 3);
         return errstatus_ok;
     default:
-        cfg_log_incorrect_role(cfg, out_user->role);
+        cfg_log_incorrect_role(cfg, p_user->role);
         return errstatus_handled;
     }
 }
@@ -320,22 +320,22 @@ errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
     if (!out_msgs->msgs) errno_exit("malloc");
     out_msgs->n_msgs = (size_t)ntuples;
     for (int32_t i = 0; i < ntuples; ++i) {
-        msg_t *m = &out_msgs->msgs[i];
-        m->id = pq_recv_l(serial_t, PQgetvalue(result, i, 0));
-        m->content = PQgetvalue(result, i, 1);
-        m->sent_at = pq_recv_timestamp(PQgetvalue(result, i, 2));
-        m->read_age = PQgetisnull(result, i, 3) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, i, 3));
-        m->edited_age = PQgetisnull(result, i, 4) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, i, 4));
-        m->deleted_age = 0;
-        m->user_id_sender = PQgetisnull(result, i, 5) ? 0 : pq_recv_l(serial_t, PQgetvalue(result, i, 5));
-        m->user_id_recipient = recipient_id;
+        msg_t *p_msg = &out_msgs->msgs[i];
+        p_msg->id = pq_recv_l(serial_t, PQgetvalue(result, i, 0));
+        p_msg->content = PQgetvalue(result, i, 1);
+        p_msg->sent_at = pq_recv_timestamp(PQgetvalue(result, i, 2));
+        p_msg->read_age = PQgetisnull(result, i, 3) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, i, 3));
+        p_msg->edited_age = PQgetisnull(result, i, 4) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, i, 4));
+        p_msg->deleted_age = 0;
+        p_msg->user_id_sender = PQgetisnull(result, i, 5) ? 0 : pq_recv_l(serial_t, PQgetvalue(result, i, 5));
+        p_msg->user_id_recipient = recipient_id;
     }
 
     return errstatus_ok;
 }
 
-errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *msg) {
-    uint32_t const arg1 = pq_send_l(msg->id);
+errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *p_msg) {
+    uint32_t const arg1 = pq_send_l(p_msg->id);
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
@@ -351,13 +351,13 @@ errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *msg) {
         return errstatus_error;
     }
 
-    msg->content = PQgetvalue(result, 0, 0);
-    msg->sent_at = pq_recv_timestamp(PQgetvalue(result, 0, 1));
-    msg->read_age = PQgetisnull(result, 0, 2) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 2));
-    msg->edited_age = PQgetisnull(result, 0, 3) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 3));
-    msg->deleted_age = PQgetisnull(result, 0, 4) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 4));
-    msg->user_id_sender = PQgetisnull(result, 0, 5) ? 0 : pq_recv_l(serial_t, PQgetvalue(result, 0, 5));
-    msg->user_id_recipient = pq_recv_l(serial_t, PQgetvalue(result, 0, 6));
+    p_msg->content = PQgetvalue(result, 0, 0);
+    p_msg->sent_at = pq_recv_timestamp(PQgetvalue(result, 0, 1));
+    p_msg->read_age = PQgetisnull(result, 0, 2) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 2));
+    p_msg->edited_age = PQgetisnull(result, 0, 3) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 3));
+    p_msg->deleted_age = PQgetisnull(result, 0, 4) ? 0 : pq_recv_l(int32_t, PQgetvalue(result, 0, 4));
+    p_msg->user_id_sender = PQgetisnull(result, 0, 5) ? 0 : pq_recv_l(serial_t, PQgetvalue(result, 0, 5));
+    p_msg->user_id_recipient = pq_recv_l(serial_t, PQgetvalue(result, 0, 6));
     return errstatus_ok;
 }
 

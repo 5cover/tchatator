@@ -86,21 +86,21 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, char const *name);
 /// @param db The database.
 /// @param pmem Parent memory owner.
 /// @param cfg The configuration.
-/// @param user The user record to fill.
+/// @param p_user The pointer to the user record to fill.
 /// @return @ref errstatus_handled A database error occured. A message has been shown. @p user is untouched.
 /// @return @ref errstatus_error No user of ID @p user->id exists in the database. @p user is untouched.
 /// @return @ref errstatus_ok Success.
-errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *user);
+errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *p_user);
 
 /// @brief Retrieves a message from the database. If @p msg->id is undefined, the behavior is undefined.
 /// @param db The database.
 /// @param pmem Parent memory owner.
 /// @param cfg The configuration.
-/// @param msg The message to be filled with the retrieved data.
+/// @param p_msg The pointer to the message to be filled with the retrieved data.
 /// @return @ref errstatus_ok The message was successfully retrieved.
 /// @return @ref errstatus_error The message could not be retrieved. No message of ID @p msg->id exists in the database.
 /// @return @ref errstatus_handled A database error occured. A message has been shown. @p msg is untouched.
-errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *msg);
+errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *p_msg);
 
 /// @brief Check a password against the stored hash for an user.
 /// @param db The database.

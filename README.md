@@ -57,11 +57,7 @@ Prefixes can be repeated when applicable such as `pp_` for double pointers. Exam
 char **zd_argv; // z for the inner strings, d for the indesable array of pointers
 ```
 
-Note: `p_` does not apply to double-pointers to opaque or void pointers. Example:
-
-```c
-opaque_t **opaque; // not p_opaque
-```
+Naming exception: `memlst_t **pmem`. `pmem` indicates "parent memory" and is clearer than `p_pmem`. Such pointers are usually unique and aren't dereferenced locally, so there's really no need for a `p_` prefix.
 
 ### Typedefs
 

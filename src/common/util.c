@@ -52,33 +52,33 @@ char *vstrfmt(const char *fmt, va_list ap) {
 }
 
 char *fslurp(FILE *fp) {
-    char *d_answer;
-    char *d_temp;
+    char *answer;
+    char *temp;
     size_t bufsize = 1024;
     size_t i = 0;
     int c;
 
-    d_answer = malloc(1024);
-    if (!d_answer) return 0;
+    answer = malloc(1024);
+    if (!answer) return 0;
 
     while ((c = fgetc(fp)) != EOF) {
         if (i == bufsize - 2) {
             if (bufsize > INT_MAX - 100 - bufsize / 10) {
-                free(d_answer);
+                free(answer);
                 return 0;
             }
             bufsize = bufsize + 100 * bufsize / 10;
-            d_temp = realloc(d_answer, bufsize);
-            if (d_temp == 0) {
-                free(d_answer);
+            temp = realloc(answer, bufsize);
+            if (temp == 0) {
+                free(answer);
                 return 0;
             }
-            d_answer = d_temp;
+            answer = temp;
         }
-        d_answer[i++] = (char)c;
+        answer[i++] = (char)c;
     }
-    d_answer[i++] = 0;
+    answer[i++] = 0;
 
-    d_temp = realloc(d_answer, i);
-    return COALESCE(d_temp, d_answer);
+    temp = realloc(answer, i);
+    return COALESCE(temp, answer);
 }

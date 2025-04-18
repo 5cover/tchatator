@@ -9,25 +9,25 @@
 #define NAME db_get_user
 
 TEST_SIGNATURE(NAME) {
-    test_t tst = TEST_INIT(NAME);
+    test_t test = TEST_INIT(NAME);
 
     {
         user_t user = { .id = 1 };
-        db_get_user(tst.db, tst.pmem, tst.cfg, &user);
+        db_get_user(test.db, test.pmem, test.cfg, &user);
 
-        TEST_CASE_EQ_INT(&tst.t, user.id, 1, );
-        TEST_CASE_EQ_INT(&tst.t, user.role, role_pro, );
-        TEST_CASE_EQ_STR(&tst.t, user.pro.business_name, "pro1 corp", );
+        TEST_CASE_EQ_INT(&test.t, user.id, 1, );
+        TEST_CASE_EQ_INT(&test.t, user.role, role_pro, );
+        TEST_CASE_EQ_STR(&test.t, user.pro.business_name, "pro1 corp", );
     }
 
     {
         user_t user = { .id = 3 };
-        db_get_user(tst.db, tst.pmem, tst.cfg, &user);
+        db_get_user(test.db, test.pmem, test.cfg, &user);
 
-        TEST_CASE_EQ_INT(&tst.t, user.id, 3, );
-        TEST_CASE_EQ_INT(&tst.t, user.role, role_member, );
-        TEST_CASE_EQ_STR(&tst.t, user.member.user_name, "member1", );
+        TEST_CASE_EQ_INT(&test.t, user.id, 3, );
+        TEST_CASE_EQ_INT(&test.t, user.role, role_member, );
+        TEST_CASE_EQ_STR(&test.t, user.member.user_name, "member1", );
     }
 
-    return tst.t;
+    return test.t;
 }

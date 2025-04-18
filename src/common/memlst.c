@@ -19,42 +19,42 @@ void dtor_json_object(void *jo) {
     json_object_put(jo);
 }
 
-void memlst_destroy(memlst_t **memlst FILE_LINE_PARAMS) {
+void memlst_destroy(memlst_t **p_memlst FILE_LINE_PARAMS) {
 #ifdef MEMLST_TRACE
     fprintf(stderr, "%s:%d memlst_destroy(%p)\n", file, line, memlst);
 #endif
-    memlst_collect(memlst FILE_LINE_ARGS);
-    arrfree(*memlst);
+    memlst_collect(p_memlst FILE_LINE_ARGS);
+    arrfree(*p_memlst);
 }
 
-void *memlst_add(memlst_t *restrict *restrict memlst, dtor_fn dtor, void *restrict ptr FILE_LINE_PARAMS) {
+void *memlst_add(memlst_t *restrict *restrict p_memlst, dtor_fn dtor, void *restrict ptr FILE_LINE_PARAMS) {
 #ifdef MEMLST_TRACE
     fprintf(stderr, "%s:%d memlst_add(%p, dtor=%p, ptr=%p)\n", file, line, memlst, dtor, ptr);
 #endif
     if (!ptr) return NULL;
 
 #ifndef NDEBUG
-    for (ptrdiff_t i = 0; i < arrlen(*memlst); ++i) {
-        assert((*memlst)[i].ptr != ptr);
+    for (ptrdiff_t i = 0; i < arrlen(*p_memlst); ++i) {
+        assert((*p_memlst)[i].ptr != ptr);
     }
 #endif
 
-    arrput(*memlst, ((memlst_t) {
+    arrput(*p_memlst, ((memlst_t) {
                         .ptr = ptr,
                         .dtor = dtor,
                     }));
     return ptr;
 }
 
-void memlst_collect(memlst_t **memlst FILE_LINE_PARAMS) {
+void memlst_collect(memlst_t **p_memlst FILE_LINE_PARAMS) {
 #ifdef MEMLST_TRACE
     fprintf(stderr, "%s:%d memlst_collect(%p)\n", file, line, memlst);
 #endif
-    for (ptrdiff_t i = 0; i < arrlen(*memlst); ++i) {
+    for (ptrdiff_t i = 0; i < arrlen(*p_memlst); ++i) {
 #ifdef MEMLST_TRACE
         fprintf(stderr, "  clean %p\n", (*memlst)[i].ptr);
 #endif
-        (*memlst)[i].dtor((*memlst)[i].ptr);
+        (*p_memlst)[i].dtor((*p_memlst)[i].ptr);
     }
-    arrsetlen(*memlst, 0);
+    arrsetlen(*p_memlst, 0);
 }

@@ -21,8 +21,8 @@ static serial_t gs_msg_id;
 static time_t gs_msg_sent_at;
 
 static void on_action(action_t const *action, void *t) {
-    test_t const *test = base_on_action(t);
-    switch (test->n_actions) {
+    test_t const *p_test = base_on_action(t);
+    switch (p_test->n_actions) {
     case 1: // send
         if (!TEST_CASE_EQ_INT(t, action->type, action_type_send, )) return;
         TEST_CASE_EQ_UUID(t, action->with.send.constr.api_key, API_KEY_MEMBER1_UUID, );
@@ -42,19 +42,20 @@ static void on_action(action_t const *action, void *t) {
         TEST_CASE_EQ_STR(t, action->with.send.constr.password, "member1_mdp", );
         TEST_CASE_EQ_INT(t, action->with.rm.msg_id, gs_msg_id, );
         break;
-    default: test_fail(t, "wrong test->n_actions: %d", test->n_actions);
+    default: test_fail(t, "wrong test->n_actions: %d", p_test->n_actions);
     }
 }
 
-static void on_response(response_t const *response, void *t) {
-    test_t *test = base_on_response(t);
-    test_case(t, !response->has_next_page, "");
-    switch (test->n_responses) {
+static void on_response(response_t const *p_resp, void *t) {
+    test_t *p_test = base_on_response(t);
+    test_case(t, !p_resp->has_next_page, "");
+    switch (p_test->n_responses) {
     case 1: { // send
-        if (!TEST_CASE_EQ_INT(t, response->type, action_type_send, )) return;
+        if (!TEST_CASE_EQ_INT(t, p_resp->type, action_type_send, )) return;
 
-        msg_t msg = { .id = response->body.send.msg_id };
-        if (!test_case(t, errstatus_ok == db_get_msg(test->db, test->pmem, test->cfg, &msg), "sent msg id %d exists", msg.id)) return;
+        msg_t msg = { .id = p_resp->body.send.msg_id };
+        if (!test_case(t, errstatus_ok == db_get_msg(p_test->db, p_test->pmem, p_test->cfg, &msg),
+                "sent msg id %d exists", msg.id)) return;
         gs_msg_id = msg.id;
         gs_msg_sent_at = msg.sent_at;
         TEST_CASE_EQ_INT(t, msg.read_age, 0, );
@@ -66,9 +67,9 @@ static void on_response(response_t const *response, void *t) {
         break;
     }
     case 2: { // inbox
-        if (!TEST_CASE_EQ_INT(t, response->type, action_type_inbox, )) return;
-        if (!TEST_CASE_EQ_INT64(t, response->body.inbox.n_msgs, 1, )) return;
-        msg_t msg = response->body.inbox.msgs[0];
+        if (!TEST_CASE_EQ_INT(t, p_resp->type, action_type_inbox, )) return;
+        if (!TEST_CASE_EQ_INT64(t, p_resp->body.inbox.n_msgs, 1, )) return;
+        msg_t msg = p_resp->body.inbox.msgs[0];
         TEST_CASE_EQ_INT(t, msg.id, gs_msg_id, );
         TEST_CASE_EQ_INT64(t, msg.sent_at, gs_msg_sent_at, );
         TEST_CASE_EQ_INT(t, msg.read_age, 0, );
@@ -80,9 +81,9 @@ static void on_response(response_t const *response, void *t) {
         break;
     }
     case 3: // rm
-        TEST_CASE_EQ_INT(t, response->type, action_type_rm, );
+        TEST_CASE_EQ_INT(t, p_resp->type, action_type_rm, );
         break;
-    default: test_fail(t, "wrong test->n_responses: %d", test->n_actions);
+    default: test_fail(t, "wrong test->n_responses: %d", p_test->n_actions);
     }
 }
 
@@ -130,9 +131,9 @@ static errstatus_t transaction(db_t *db, cfg_t *cfg, void *ctx) {
 }
 
 TEST_SIGNATURE(NAME) {
-    test_t tst = TEST_INIT(NAME);
+    test_t test = TEST_INIT(NAME);
 
-    db_transaction(tst.db, tst.cfg, transaction, &tst);
+    db_transaction(test.db, test.cfg, transaction, &test);
 
-    return tst.t;
+    return test.t;
 }

@@ -6,13 +6,12 @@
 #ifndef TESTS_H
 #define TESTS_H
 
-#include <assert.h>
-#include "json-c.h"
 #include "stb_test.h"
-
 #include "tchatator413/cfg.h"
 #include "tchatator413/db.h"
 #include "tchatator413/json-helpers.h"
+#include <assert.h>
+#include <stddef.h>
 
 // Other tests
 
@@ -135,7 +134,7 @@ typedef struct {
 _Static_assert(offsetof(test_t, t) == 0, "backing test must be at start of struct for implicit base type punning");
 
 /// @brief Test the amount of actions interpeted.
-#define test_case_count(t, actual, expected, singular) test_case(t, actual == expected, "expected %d %s%s, got %d", expected, singular, expected == 1 ? "" : "s", actual)
+#define test_case_count(t, actual, expected, singular) test_case(t, (actual) == (expected), "expected %d %s%s, got %d", expected, singular, (expected) == 1 ? "" : "s", actual)
 
 json_object *load_json(char const *input_filename);
 json_object *load_jsonf(char const *input_filename, ...);
@@ -162,22 +161,22 @@ void test_case_n_actions(test_t *test, int expected);
 bool json_object_eq_fmt(json_object *jo_actual, json_object *jo_expected);
 
 /// @brief Test an integer for equality with an expected value.
-#define TEST_CASE_EQ_INT(t, actual, expected, fmt) test_case((t), actual == expected, fmt " == %d", actual)
+#define TEST_CASE_EQ_INT(t, actual, expected, fmt) test_case((t), (actual) == (expected), fmt " == %d", actual)
 /// @brief Test a long for equality with an expected value.
-#define TEST_CASE_EQ_INT64(t, actual, expected, fmt) test_case((t), actual == expected, fmt " == %ld", actual)
+#define TEST_CASE_EQ_INT64(t, actual, expected, fmt) test_case((t), (actual) == (expected), fmt " == %ld", actual)
 /// @brief Test a string for equality with an expected value.
 #define TEST_CASE_EQ_STR(t, actual, expected, fmt) test_case((t), streq_nullable(actual, expected), fmt " == %s", actual)
 /// @brief Test a JSON object for equality with an expected value.
 #define TEST_CASE_EQ_JSON_OBJECT(t, actual, expected, fmt) test_case((t), json_object_equal(actual, expected), fmt " == %s", min_json(actual))
 
 /// @brief Temporary placeholder for the representation of the UUID currently being tested for equality.
-extern char _gd_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
+extern char ig_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
 
 /// @brief Test an UUID for equality with an expected value.
 #define TEST_CASE_EQ_UUID(t, actual, expected, fmt) test_case((t), uuid4_eq(actual, expected), \
     fmt UUID4_FMT " == " UUID4_FMT,                                                            \
-    uuid4_repr(actual, _gd_test_case_eq_uuid_repr + UUID4_REPR_LENGTH),                         \
-    uuid4_repr(expected, _gd_test_case_eq_uuid_repr));
+    uuid4_repr(actual, ig_test_case_eq_uuid_repr + UUID4_REPR_LENGTH),                         \
+    uuid4_repr(expected, ig_test_case_eq_uuid_repr));
 
 /// @brief A special return value for test transaction returns.
 #define errstatus_tested (errstatus_t)(max_errstatus + 1)
