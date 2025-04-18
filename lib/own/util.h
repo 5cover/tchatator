@@ -102,7 +102,7 @@
 /// @param a The first argument to check.
 /// @param b The second argument to use if @p a is null.
 /// @return @p a if it is not null, otherwise @p b.
-#define COALESCE(a, b) ((a == NULL) ? (b) : (a))
+#define COALESCE(a, b) (((a) == NULL) ? (b) : (a))
 
 /// @brief Exits the program with an error message and failure status.
 ///

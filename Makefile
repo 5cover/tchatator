@@ -29,7 +29,7 @@ CLANG_TIDY := clang-tidy
 TIDY_OPTS := -p build/compile_commands.json
 
 # Helpers 
-rwildcard = $(foreach d,$(wildcard $(1)/*),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
 # Files and directories
 src_common := $(call rwildcard,src/common,*.c)
@@ -47,6 +47,8 @@ bin_client := $(bin_dir)/tchatator
 bin_server := $(bin_dir)/tchatator-server
 bin_test := $(bin_dir)/test
 
+pdf_dir := pdf
+
 # Targets 
 
 .PHONY: all client server test testdb db clean tidy
@@ -57,7 +59,8 @@ bin_test := $(bin_dir)/test
 all: client server $(bin_test)
 
 clean:
-	rm -rf $(bin_dir)
+	rm -rf $(bin_dir) $(pdf_dir)
+
 tidy:
 	$(CLANG_TIDY) $(TIDY_OPTS) $(shell find src include -name '*.c' -o -name '*.h')
 
@@ -105,3 +108,21 @@ db: $(src_sql)
 	done; \
 	echo "Executing psql..."; \
 	PGPASSWORD="$$DB_PASSWORD" psql -U "$$DB_USER" -h "$$DB_HOST" -p "$$DB_PORT" -d "$$DB_NAME" "$${sql_args[@]}" -c 'commit;'
+
+dir_c:=src
+dir_h:=lib/own
+
+pdf_src:=$(patsubst $(dir_c)/%,$(pdf_dir)/%.pdf,$(call rwildcard,$(dir_c),*.c))
+pdf_src+=$(patsubst $(dir_h)/%,$(pdf_dir)/%.pdf,$(call rwildcard,$(dir_h),*.h))
+pdf: $(pdf_src)
+
+define pdf_recipe
+	mkdir -p $(pdf_dir)
+	enscript -Bqp - $< | ps2pdf - $(subst pdf\\,pdf/,$(subst /,\\,$@))
+endef
+
+# Rules to generate PDF from code
+$(pdf_dir)/%.c.pdf: $(dir_c)/%.c
+	$(pdf_recipe)
+$(pdf_dir)/%.h.pdf: $(dir_h)/%.h
+	$(pdf_recipe)

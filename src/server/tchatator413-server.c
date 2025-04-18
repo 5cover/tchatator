@@ -6,18 +6,18 @@
 ///
 /// @date 1/02/2025
 
+#include "json-c.h"
+#include "stb_ds.h"
+#include "tchatator413/tchatator413.h"
 #include <arpa/inet.h>
 #include <errno.h>
-#include "json-c.h"
 #include <signal.h>
-#include "stb_ds.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include "tchatator413/tchatator413.h"
 #include <unistd.h>
 
 #define SERVER_ADDR "127.0.0.1"
@@ -31,10 +31,10 @@ typedef struct {
     int n_requests_m;
 } user_stats_t;
 
-static inline void json_object_write(json_object *obj, cfg_t *cfg, int fd) {
+static inline void json_object_write(json_object *jo, cfg_t *cfg, int fd) {
     size_t len;
     ssize_t bytes_written;
-    char const *output = json_object_to_json_string_length(obj, JSON_C_TO_STRING_PLAIN, &len);
+    char const *output = json_object_to_json_string_length(jo, JSON_C_TO_STRING_PLAIN, &len);
     ++len; // include null terminator
     cfg_log(cfg, log_info, "preparing to write %zu bytes of response\n", len);
 
@@ -115,7 +115,7 @@ static int gs_sock = -1;
 static inline void close_sock(int sig) {
     (void)sig;
     if (gs_sock == -1) return;
-    if (-1 == close(gs_sock)) perror("close"); // do not exit, we're already gonna do that by setting gs_sock to -1
+    close(gs_sock); // error left unreported. intentionally.
     gs_sock = -1;
 }
 

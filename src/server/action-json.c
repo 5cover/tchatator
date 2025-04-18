@@ -5,7 +5,6 @@
 
 #include "json-c.h"
 #include "tchatator413/action.h"
-#include "tchatator413/const.h"
 #include "tchatator413/errstatus.h"
 #include "tchatator413/json-helpers.h"
 #include "util.h"
@@ -32,7 +31,7 @@ get_user_id(cfg_t *cfg, db_t *db, json_object *jo_user) {
     return errstatus_error;
 }
 
-action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *obj) {
+action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *jo) {
     // json_object internal memory is not considered stable enough to reuse outside of this function, so we must duplicate extracted pointers (such as strings).
 
     action_t action = { 0 };
@@ -53,45 +52,45 @@ action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *
         return action;                                           \
     } while (0)
 
-#define fail_type(_location, _jo_actual, _expected)          \
-    do {                                                      \
-        action.type = action_type_error;                      \
-        action.with.error.type = action_error_type_type;      \
-        action.with.error.info.type.location = _location;     \
+#define fail_type(_location, _jo_actual, _expected)         \
+    do {                                                    \
+        action.type = action_type_error;                    \
+        action.with.error.type = action_error_type_type;    \
+        action.with.error.info.type.location = _location;   \
         action.with.error.info.type.jo_actual = _jo_actual; \
-        action.with.error.info.type.expected = _expected;     \
-        return action;                                        \
+        action.with.error.info.type.expected = _expected;   \
+        return action;                                      \
     } while (0)
 
-#define fail_invalid(_location, _jo_bad, _reason)           \
+#define fail_invalid(_location, _jo_bad, _reason)            \
     do {                                                     \
         action.type = action_type_error;                     \
         action.with.error.type = action_error_type_invalid;  \
         action.with.error.info.invalid.location = _location; \
-        action.with.error.info.invalid.jo_bad = _jo_bad;   \
+        action.with.error.info.invalid.jo_bad = _jo_bad;     \
         action.with.error.info.invalid.reason = _reason;     \
         return action;                                       \
     } while (0)
 
-#define getarg(obj, key, out_value, json_type, getter)         \
+#define getarg(jo, key, out_value, json_type, getter)          \
     do {                                                       \
-        if (!json_object_object_get_ex(jo_with, key, &obj)) { \
+        if (!json_object_object_get_ex(jo_with, key, &(jo))) { \
             fail_missing_key(arg_loc(key));                    \
         }                                                      \
-        if (!getter(obj, out_value)) {                         \
-            fail_type(arg_loc(key), obj, json_type);           \
+        if (!getter(jo, out_value)) {                          \
+            fail_type(arg_loc(key), jo, json_type);            \
         }                                                      \
     } while (0)
 
-#define getarg_int(obj, key, out_value) getarg(obj, key, out_value, json_type_int, json_object_get_int_strict)
-#define getarg_int64(obj, key, out_value) getarg(obj, key, out_value, json_type_int, json_object_get_int64_strict)
-#define getarg_string(obj, key, out_value)                         \
+#define getarg_int(jo, key, out_value) getarg(jo, key, out_value, json_type_int, json_object_get_int_strict)
+#define getarg_int64(jo, key, out_value) getarg(jo, key, out_value, json_type_int, json_object_get_int64_strict)
+#define getarg_string(jo, key, out_value)                          \
     do {                                                           \
-        if (!json_object_object_get_ex(jo_with, key, &obj)) {     \
+        if (!json_object_object_get_ex(jo_with, key, &(jo))) {     \
             fail_missing_key(arg_loc(key));                        \
         }                                                          \
-        if (!json_object_get_string_strict(obj, out_value)) {      \
-            fail_type(arg_loc(key), obj, json_type_string);        \
+        if (!json_object_get_string_strict(jo, out_value)) {       \
+            fail_type(arg_loc(key), jo, json_type_string);         \
         }                                                          \
         if (!((out_value)->val = memlst_add(pmem, free,            \
                   strndup((out_value)->val, (out_value)->len)))) { \
@@ -99,17 +98,17 @@ action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *
         }                                                          \
     } while (0)
 #define DELIMITER "¤"
-#define getarg_constr(obj, key, out_value)                                                \
+#define getarg_constr(jo, key, out_value)                                                 \
     do {                                                                                  \
-        if (!json_object_object_get_ex(jo_with, key, &obj)) {                            \
+        if (!json_object_object_get_ex(jo_with, key, &(jo))) {                            \
             fail_missing_key(arg_loc(key));                                               \
         }                                                                                 \
         slice_t constr;                                                                   \
-        if (!json_object_get_string_strict(obj, &constr)) {                               \
-            fail_type(arg_loc(key), obj, json_type_string);                               \
+        if (!json_object_get_string_strict(jo, &constr)) {                                \
+            fail_type(arg_loc(key), jo, json_type_string);                                \
         }                                                                                 \
         if (!uuid4_parse_slice(&(out_value)->api_key, constr)) {                          \
-            fail_invalid(arg_loc(key), obj, "invalid API key");                           \
+            fail_invalid(arg_loc(key), jo, "invalid API key");                            \
         }                                                                                 \
         if (constr.len >= UUID4_REPR_LENGTH + sizeof DELIMITER - 1                        \
             && strneq(constr.val + UUID4_REPR_LENGTH, DELIMITER, sizeof DELIMITER - 1)) { \
@@ -122,47 +121,47 @@ action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *
         }                                                                                 \
     } while (0)
 
-#define getarg_user(obj, key, out_value)                                           \
-    do {                                                                           \
-        if (!json_object_object_get_ex(jo_with, key, &obj)) {                     \
-            fail_missing_key(arg_loc(key));                                        \
-        }                                                                          \
-        switch (*out_value = get_user_id(cfg, db, obj)) {                          \
-        case errstatus_error: fail_invalid(arg_loc(key), obj, "invalid user key"); \
-        case errstatus_handled: fail();                                            \
-        case errstatus_ok:;                                                        \
-        }                                                                          \
+#define getarg_user(jo, key, out_value)                                           \
+    do {                                                                          \
+        if (!json_object_object_get_ex(jo_with, key, &(jo))) {                    \
+            fail_missing_key(arg_loc(key));                                       \
+        }                                                                         \
+        switch (*(out_value) = get_user_id(cfg, db, jo)) {                        \
+        case errstatus_error: fail_invalid(arg_loc(key), jo, "invalid user key"); \
+        case errstatus_handled: fail();                                           \
+        case errstatus_ok:;                                                       \
+        }                                                                         \
     } while (0)
-#define getarg_page(obj, key, out_value)                                \
-    do { /* temporary fix to make optional arguments */                 \
-        if (json_object_object_get_ex(jo_with, key, &obj)) {           \
-            getarg_int(obj, key, out_value);                            \
-            if (*out_value < 1) {                                       \
-                fail_invalid(arg_loc(key), obj, "invalid page number"); \
-            }                                                           \
-        } else {                                                        \
-            *out_value = 1;                                             \
-        }                                                               \
+#define getarg_page(jo, key, out_value)                                \
+    do { /* temporary fix to make optional arguments */                \
+        if (json_object_object_get_ex(jo_with, key, &(jo))) {          \
+            getarg_int(jo, key, out_value);                            \
+            if (*(out_value) < 1) {                                    \
+                fail_invalid(arg_loc(key), jo, "invalid page number"); \
+            }                                                          \
+        } else {                                                       \
+            *(out_value) = 1;                                          \
+        }                                                              \
     } while (0)
-#define getarg_api_key(obj, get)                                         \
+#define getarg_api_key(jo, get)                                          \
     do {                                                                 \
         slice_t api_key_repr;                                            \
-        getarg_string(obj, "api_key", &api_key_repr);                    \
+        getarg_string(jo, "api_key", &api_key_repr);                     \
         if (!uuid4_parse_slice(&action.with.DO.api_key, api_key_repr)) { \
-            fail_invalid(arg_loc("api_key"), obj, "invalid API key");    \
+            fail_invalid(arg_loc("api_key"), jo, "invalid API key");     \
         }                                                                \
     } while (0)
 
 #define arg_loc(key) (STR(DO) ".with." key)
 
     json_object *jo_do;
-    if (!json_object_object_get_ex(obj, "do", &jo_do)) fail_missing_key("action.do");
+    if (!json_object_object_get_ex(jo, "do", &jo_do)) fail_missing_key("action.do");
 
     slice_t action_name;
     if (!json_object_get_string_strict(jo_do, &action_name)) fail_type("action", jo_do, json_type_string);
 
     json_object *jo_with;
-    if (!json_object_object_get_ex(obj, "with", &jo_with)) fail_missing_key("action.with");
+    if (!json_object_object_get_ex(jo, "with", &jo_with)) fail_missing_key("action.with");
 
 // this is save because the null terminator of the literal string STR(name) will stop strcmp
 #define action_is(name) streq(STR(name), action_name.val)
@@ -267,16 +266,16 @@ action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *
 #define add_key(o, k, v) json_object_object_add_ex(o, k, v, JSON_C_OBJECT_ADD_KEY_IS_NEW | JSON_C_OBJECT_KEY_IS_CONSTANT)
 
 static json_object *msg_to_json_object(msg_t const *msg) {
-    json_object *obj = json_object_new_object();
-    add_key(obj, "msg_id", json_object_new_int(msg->id));
-    add_key(obj, "sent_at", json_object_new_int64(msg->sent_at));
-    add_key(obj, "content", json_object_new_string(msg->content));
-    add_key(obj, "sender", json_object_new_int(msg->user_id_sender));
-    add_key(obj, "recipient", json_object_new_int(msg->user_id_recipient));
-    if (msg->deleted_age) add_key(obj, "deleted_age", json_object_new_int(msg->deleted_age));
-    if (msg->read_age) add_key(obj, "read_age", json_object_new_int(msg->read_age));
-    if (msg->edited_age) add_key(obj, "edited_age", json_object_new_int(msg->edited_age));
-    return obj;
+    json_object *jo = json_object_new_object();
+    add_key(jo, "msg_id", json_object_new_int(msg->id));
+    add_key(jo, "sent_at", json_object_new_int64(msg->sent_at));
+    add_key(jo, "content", json_object_new_string(msg->content));
+    add_key(jo, "sender", json_object_new_int(msg->user_id_sender));
+    add_key(jo, "recipient", json_object_new_int(msg->user_id_recipient));
+    if (msg->deleted_age) add_key(jo, "deleted_age", json_object_new_int(msg->deleted_age));
+    if (msg->read_age) add_key(jo, "read_age", json_object_new_int(msg->read_age));
+    if (msg->edited_age) add_key(jo, "edited_age", json_object_new_int(msg->edited_age));
+    return jo;
 }
 
 json_object *response_to_json(response_t *response) {
@@ -375,36 +374,36 @@ json_object *response_to_json(response_t *response) {
         break;
     }
     case action_type_outbox:
-
+        // todo
         break;
     case action_type_edit:
-
+        // todo
         break;
     case action_type_rm:
-
+        // todo
         break;
     case action_type_block:
-
+        // todo
         break;
     case action_type_unblock:
-
+        // todo
         break;
     case action_type_ban:
-
+        // todo
         break;
     case action_type_unban:
-
+        // todo
         break;
     default: unreachable();
     }
 
-    json_object *obj = json_object_new_object();
+    json_object *jo = json_object_new_object();
 
-    if (response->has_next_page) add_key(obj, "has_next_page", json_object_new_boolean(true));
-    if (jo_body) add_key(obj, "body", jo_body);
-    if (jo_error) add_key(obj, "error", jo_error);
+    if (response->has_next_page) add_key(jo, "has_next_page", json_object_new_boolean(true));
+    if (jo_body) add_key(jo, "body", jo_body);
+    if (jo_error) add_key(jo, "error", jo_error);
 
 #undef add_key
 
-    return obj;
+    return jo;
 }

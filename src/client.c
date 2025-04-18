@@ -10,7 +10,7 @@
 #define SERVER_PORT 4113
 #define BUFFER_SIZE 1024
 
-json_object *send_request(json_object *obj);
+json_object *send_request(json_object *jo);
 static void login(const char *api_key, const char *password);
 static void logout(void);
 static void send_message(const char *dest, const char *content);
@@ -151,7 +151,7 @@ int main(void) {
     }
 }
 
-json_object *send_request(json_object *obj) {
+json_object *send_request(json_object *jo) {
     int sockfd;
     struct sockaddr_in server_addr;
 
@@ -168,7 +168,7 @@ json_object *send_request(json_object *obj) {
         exit(EXIT_FAILURE);
     }
 
-    const char *json_str = json_object_to_json_string_ext(obj, JSON_C_TO_STRING_PLAIN);
+    const char *json_str = json_object_to_json_string_ext(jo, JSON_C_TO_STRING_PLAIN);
 
     printf("Envoi de %s\n", json_str);
 
@@ -197,16 +197,16 @@ json_object *send_request(json_object *obj) {
 }
 
 void login(const char *api_key, const char *password) {
-    json_object *jobj = json_object_new_object();
-    json_object *with_obj = json_object_new_object();
+    json_object *jo = json_object_new_object();
+    json_object *jo_with = json_object_new_object();
 
-    json_object_object_add(with_obj, "api_key", json_object_new_string(api_key));
-    json_object_object_add(with_obj, "password", json_object_new_string(password));
-    json_object_object_add(jobj, "do", json_object_new_string("login"));
-    json_object_object_add(jobj, "with", with_obj);
+    json_object_object_add(jo_with, "api_key", json_object_new_string(api_key));
+    json_object_object_add(jo_with, "password", json_object_new_string(password));
+    json_object_object_add(jo, "do", json_object_new_string("login"));
+    json_object_object_add(jo, "with", jo_with);
 
-    json_object *jo_rep = send_request(jobj);
-    json_object_put(jobj);
+    json_object *jo_rep = send_request(jo);
+    json_object_put(jo);
     if (!jo_rep) return;
 
     gs_state.tag = state_connected;
@@ -214,12 +214,12 @@ void login(const char *api_key, const char *password) {
 }
 
 void logout() {
-    json_object *jobj = json_object_new_object();
-    json_object_object_add(jobj, "do", json_object_new_string("logout"));
-    json_object_object_add(jobj, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object *jo = json_object_new_object();
+    json_object_object_add(jo, "do", json_object_new_string("logout"));
+    json_object_object_add(jo, "token", json_object_new_int64(gs_state.info.connected.token));
 
-    json_object *jo_rep = send_request(jobj);
-    json_object_put(jobj);
+    json_object *jo_rep = send_request(jo);
+    json_object_put(jo);
     if (!jo_rep) return;
 
     gs_state.tag = state_unconnected;
@@ -228,163 +228,163 @@ void logout() {
 }
 
 void send_message(const char *dest, const char *content) {
-    json_object *jobj = json_object_new_object();
-    json_object *with_obj = json_object_new_object();
+    json_object *jo = json_object_new_object();
+    json_object *jo_with = json_object_new_object();
 
-    json_object_object_add(with_obj, "token", json_object_new_int64(gs_state.info.connected.token));
-    json_object_object_add(with_obj, "dest", json_object_new_string(dest));
-    json_object_object_add(with_obj, "content", json_object_new_string(content));
-    json_object_object_add(jobj, "do", json_object_new_string("send"));
-    json_object_object_add(jobj, "with", with_obj);
+    json_object_object_add(jo_with, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object_object_add(jo_with, "dest", json_object_new_string(dest));
+    json_object_object_add(jo_with, "content", json_object_new_string(content));
+    json_object_object_add(jo, "do", json_object_new_string("send"));
+    json_object_object_add(jo, "with", jo_with);
 
-    send_request(jobj);
-    json_object_put(jobj);
+    send_request(jo);
+    json_object_put(jo);
 }
 
 void modif_message(int msg_id, const char *content) {
-    json_object *jobj = json_object_new_object();
-    json_object *with_obj = json_object_new_object();
+    json_object *jo = json_object_new_object();
+    json_object *jo_with = json_object_new_object();
 
-    json_object_object_add(with_obj, "token", json_object_new_int64(gs_state.info.connected.token));
-    json_object_object_add(with_obj, "msg_id", json_object_new_int(msg_id));
-    json_object_object_add(with_obj, "new_content", json_object_new_string(content));
-    json_object_object_add(jobj, "do", json_object_new_string("modif"));
-    json_object_object_add(jobj, "with", with_obj);
+    json_object_object_add(jo_with, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object_object_add(jo_with, "msg_id", json_object_new_int(msg_id));
+    json_object_object_add(jo_with, "new_content", json_object_new_string(content));
+    json_object_object_add(jo, "do", json_object_new_string("modif"));
+    json_object_object_add(jo, "with", jo_with);
 
-    send_request(jobj);
-    json_object_put(jobj);
+    send_request(jo);
+    json_object_put(jo);
 }
 
 void remove_message(int msg_id) {
-    json_object *jobj = json_object_new_object();
-    json_object_object_add(jobj, "do", json_object_new_string("rm"));
-    json_object_object_add(jobj, "token", json_object_new_int64(gs_state.info.connected.token));
-    json_object_object_add(jobj, "msg_id", json_object_new_int(msg_id));
+    json_object *jo = json_object_new_object();
+    json_object_object_add(jo, "do", json_object_new_string("rm"));
+    json_object_object_add(jo, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object_object_add(jo, "msg_id", json_object_new_int(msg_id));
 
-    send_request(jobj);
-    json_object_put(jobj);
+    send_request(jo);
+    json_object_put(jo);
 }
 
 void inbox(void) {
-    json_object *jobj = json_object_new_object();
-    json_object_object_add(jobj, "do", json_object_new_string("inbox"));
-    json_object *with = json_object_new_object();
-    json_object_object_add(jobj, "with", with);
-    json_object_object_add(with, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object *jo = json_object_new_object();
+    json_object_object_add(jo, "do", json_object_new_string("inbox"));
+    json_object *jo_with = json_object_new_object();
+    json_object_object_add(jo, "with", jo_with);
+    json_object_object_add(jo_with, "token", json_object_new_int64(gs_state.info.connected.token));
 
-    json_object *rep = send_request((jobj));
-    json_object_put(jobj);
+    json_object *rep = send_request((jo));
+    json_object_put(jo);
     if (!rep) return;
 
     int length = json_object_array_length(rep);
     for (int i = 0; i < length; ++i) {
-        json_object *obj = json_object_array_get_idx(rep, i);
+        json_object *jo_msg = json_object_array_get_idx(rep, i);
         printf("%d, envoyé le %ld, de %d: %s \n",
-            json_object_get_int(json_object_object_get(obj, "msg_id")),
-            json_object_get_int64(json_object_object_get(obj, "sent_at")),
-            json_object_get_int(json_object_object_get(obj, "sender")),
-            json_object_get_string(json_object_object_get(obj, "content")));
+            json_object_get_int(json_object_object_get(jo_msg, "msg_id")),
+            json_object_get_int64(json_object_object_get(jo_msg, "sent_at")),
+            json_object_get_int(json_object_object_get(jo_msg, "sender")),
+            json_object_get_string(json_object_object_get(jo_msg, "content")));
     }
 
     json_object_put(rep);
 }
 
 void nr_inbox(void) {
-    json_object *jobj = json_object_new_object();
-    json_object_object_add(jobj, "do", json_object_new_string("motd"));
-    json_object *with = json_object_new_object();
-    json_object_object_add(jobj, "with", with);
-    json_object_object_add(with, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object *jo = json_object_new_object();
+    json_object_object_add(jo, "do", json_object_new_string("motd"));
+    json_object *jo_with = json_object_new_object();
+    json_object_object_add(jo, "with", jo_with);
+    json_object_object_add(jo_with, "token", json_object_new_int64(gs_state.info.connected.token));
 
-    json_object *rep = send_request((jobj));
-    json_object_put(jobj);
+    json_object *rep = send_request((jo));
+    json_object_put(jo);
     if (!rep) return;
 
-    int length = json_object_array_length(rep);
-    for (int i = 0; i < length; ++i) {
-        json_object *obj = json_object_array_get_idx(rep, i);
+    size_t length = json_object_array_length(rep);
+    for (size_t i = 0; i < length; ++i) {
+        json_object *jo_msg = json_object_array_get_idx(rep, i);
         printf("%d, envoyé le %ld, de %d: %s \n",
-            json_object_get_int(json_object_object_get(obj, "msg_id")),
-            json_object_get_int64(json_object_object_get(obj, "sent_at")),
-            json_object_get_int(json_object_object_get(obj, "sender")),
-            json_object_get_string(json_object_object_get(obj, "content")));
+            json_object_get_int(json_object_object_get(jo_msg, "msg_id")),
+            json_object_get_int64(json_object_object_get(jo_msg, "sent_at")),
+            json_object_get_int(json_object_object_get(jo_msg, "sender")),
+            json_object_get_string(json_object_object_get(jo_msg, "content")));
     }
 
     json_object_put(rep);
 }
 
 void outbox(void) {
-    json_object *jobj = json_object_new_object();
-    json_object_object_add(jobj, "do", json_object_new_string("outbox"));
-    json_object *with = json_object_new_object();
-    json_object_object_add(jobj, "with", with);
-    json_object_object_add(with, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object *jo = json_object_new_object();
+    json_object_object_add(jo, "do", json_object_new_string("outbox"));
+    json_object *jo_with = json_object_new_object();
+    json_object_object_add(jo, "with", jo_with);
+    json_object_object_add(jo_with, "token", json_object_new_int64(gs_state.info.connected.token));
 
-    json_object *rep = send_request((jobj));
-    json_object_put(jobj);
+    json_object *rep = send_request((jo));
+    json_object_put(jo);
     if (!rep) return;
 
-    int length = json_object_array_length(rep);
-    for (int i = 0; i < length; ++i) {
-        json_object *obj = json_object_array_get_idx(rep, i);
+    size_t length = json_object_array_length(rep);
+    for (size_t i = 0; i < length; ++i) {
+        json_object *jo_msg = json_object_array_get_idx(rep, i);
         printf("%d, envoyé le %ld, de %d: %s \n",
-            json_object_get_int(json_object_object_get(obj, "msg_id")),
-            json_object_get_int64(json_object_object_get(obj, "sent_at")),
-            json_object_get_int(json_object_object_get(obj, "sender")),
-            json_object_get_string(json_object_object_get(obj, "content")));
+            json_object_get_int(json_object_object_get(jo_msg, "msg_id")),
+            json_object_get_int64(json_object_object_get(jo_msg, "sent_at")),
+            json_object_get_int(json_object_object_get(jo_msg, "sender")),
+            json_object_get_string(json_object_object_get(jo_msg, "content")));
     }
 
     json_object_put(rep);
 }
 
 void block(const char *user) {
-    json_object *jobj = json_object_new_object();
-    json_object *with_obj = json_object_new_object();
+    json_object *jo = json_object_new_object();
+    json_object *jo_with = json_object_new_object();
 
-    json_object_object_add(with_obj, "token", json_object_new_int64(gs_state.info.connected.token));
-    json_object_object_add(with_obj, "user", json_object_new_string(user));
-    json_object_object_add(jobj, "do", json_object_new_string("block"));
-    json_object_object_add(jobj, "with", with_obj);
+    json_object_object_add(jo_with, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object_object_add(jo_with, "user", json_object_new_string(user));
+    json_object_object_add(jo, "do", json_object_new_string("block"));
+    json_object_object_add(jo, "with", jo_with);
 
-    send_request(jobj);
-    json_object_put(jobj);
+    send_request(jo);
+    json_object_put(jo);
 }
 
 void unblock(const char *user) {
-    json_object *jobj = json_object_new_object();
-    json_object *with_obj = json_object_new_object();
+    json_object *jo = json_object_new_object();
+    json_object *jo_with = json_object_new_object();
 
-    json_object_object_add(with_obj, "token", json_object_new_int64(gs_state.info.connected.token));
-    json_object_object_add(with_obj, "user", json_object_new_string(user));
-    json_object_object_add(jobj, "do", json_object_new_string("unblock"));
-    json_object_object_add(jobj, "with", with_obj);
+    json_object_object_add(jo_with, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object_object_add(jo_with, "user", json_object_new_string(user));
+    json_object_object_add(jo, "do", json_object_new_string("unblock"));
+    json_object_object_add(jo, "with", jo_with);
 
-    send_request(jobj);
-    json_object_put(jobj);
+    send_request(jo);
+    json_object_put(jo);
 }
 
 void ban(const char *user) {
-    json_object *jobj = json_object_new_object();
-    json_object *with_obj = json_object_new_object();
+    json_object *jo = json_object_new_object();
+    json_object *jo_with = json_object_new_object();
 
-    json_object_object_add(with_obj, "token", json_object_new_int64(gs_state.info.connected.token));
-    json_object_object_add(with_obj, "user", json_object_new_string(user));
-    json_object_object_add(jobj, "do", json_object_new_string("ban"));
-    json_object_object_add(jobj, "with", with_obj);
+    json_object_object_add(jo_with, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object_object_add(jo_with, "user", json_object_new_string(user));
+    json_object_object_add(jo, "do", json_object_new_string("ban"));
+    json_object_object_add(jo, "with", jo_with);
 
-    send_request(jobj);
-    json_object_put(jobj);
+    send_request(jo);
+    json_object_put(jo);
 }
 
 void unban(const char *user) {
-    json_object *jobj = json_object_new_object();
-    json_object *with_obj = json_object_new_object();
+    json_object *jo = json_object_new_object();
+    json_object *with_jo = json_object_new_object();
 
-    json_object_object_add(with_obj, "token", json_object_new_int64(gs_state.info.connected.token));
-    json_object_object_add(with_obj, "user", json_object_new_string(user));
-    json_object_object_add(jobj, "do", json_object_new_string("unban"));
-    json_object_object_add(jobj, "with", with_obj);
+    json_object_object_add(with_jo, "token", json_object_new_int64(gs_state.info.connected.token));
+    json_object_object_add(with_jo, "user", json_object_new_string(user));
+    json_object_object_add(jo, "do", json_object_new_string("unban"));
+    json_object_object_add(jo, "with", with_jo);
 
-    send_request(jobj);
-    json_object_put(jobj);
+    send_request(jo);
+    json_object_put(jo);
 }

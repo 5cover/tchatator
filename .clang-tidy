@@ -1,67 +1,60 @@
----
-# Enable only the naming check.
-Checks: '-*,readability-identifier-naming'
+Checks: |
+  *,
+  -altera*,
+  -android*,
+  -bugprone-assignment-in-if-condition,
+  -bugprone-inc-dec-in-conditions,
+  -cert-*-cpp,
+  -cert-err33-c,
+  -clang-analyzer-cplusplus*,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -clang-analyzer-valist.Uninitialized,
+  -concurrency-mt-unsafe,
+  -cppcoreguidelines*,
+  -google-readability-braces-around-statements,
+  -google-readability-function-size,
+  -hicpp*,
+  -linuxkernel*,
+  -llvm-header-guard,
+  -llvmlibc-restrict-system-libc-headers,
+  -modernize*,
+  -readability-avoid-nested-conditional-operator,
+  -readability-braces-around-statements,
+  -readability-function-cognitive-complexity,
+  -readability-function-size,
+  -readability-identifier-length,
+  -readability-implicit-bool-conversion,
+  -readability-isolate-declaration,
+  -readability-magic-numbers,
+  -misc-no-recursion,
 
 CheckOptions:
-  # Global variables: Require that globals use the "g_" prefix.
-  - key: readability-identifier-naming.GlobalVariableCase
-    value: lower_case
-  - key: readability-identifier-naming.GlobalVariableRegex
-    value: '^g_[a-z_][a-z_0-9]*$'
-
-  # Static variables: Require that statics use the "s_" prefix.
-  - key: readability-identifier-naming.StaticVariableCase
-    value: lower_case
-  - key: readability-identifier-naming.StaticVariableRegex
-    value: '^s_[a-z_][a-z_0-9]*$'
-
-  # Other variables:
-  # We allow an optional Hungarian prefix for pointers (p_, jo_) and for out parameters (out_).
-  # Note: clang-tidy cannot distinguish pointer types from other types.
   - key: readability-identifier-naming.VariableCase
     value: lower_case
-  - key: readability-identifier-naming.VariableRegex
-    value: '^((out|p|jo)+_)?[a-z_][a-z_0-9]*)$'
-
-  # Function parameters:
-  # When a parameter is an out pointer, the convention is to use "out_", so we allow an optional "out_" prefix.
-  - key: readability-identifier-naming.ParameterCase
-    value: lower_case
-  - key: readability-identifier-naming.ParameterRegex
-    value: '^(out_)?[a-z_][a-z_0-9]*$'
-
-  # Function names should use snake_case.
   - key: readability-identifier-naming.FunctionCase
     value: lower_case
-  - key: readability-identifier-naming.FunctionRegex
-    value: '^[a-z_][a-z_0-9]*$'
-
-  # Typedefs:
-  # Require a lowercase identifier ending with _t for regular typedefs or _fn for function pointer typedefs.
   - key: readability-identifier-naming.TypedefCase
     value: lower_case
+
+  - key: readability-identifier-naming.GlobalVariableRegex
+    value: '^gs?p?_[a-z_][a-z_0-9]*$'
+  - key: readability-identifier-naming.StaticVariableRegex
+    value: '^g?sp?_[a-z_][a-z_0-9]*$'
+  #- key: readability-identifier-naming.GlobalPointerRegex
+  #  value: '^gs?p_[a-z_][a-z_0-9]*$'
+  #- key: readability-identifier-naming.LocalPointerRegex
+  #  value: '^s?p_[a-z_][a-z_0-9]*$'
+  #- key: readability-identifier-naming.PointerParameterPrefix
+  #  value: 'out_'
   - key: readability-identifier-naming.TypedefRegex
-    value: '^[a-z_][a-z_0-9]*(?:_t|_fn)$'
-
-  # Macros:
-  # Object-like macros and macros that do not expand to an expression should follow CONST_CASE (UPPER_CASE).
-  # Clang-tidy does not distinguish function-like macros from object-like macros.
-  - key: readability-identifier-naming.MacroDefinitionCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.MacroDefinitionRegex
-    value: '^[a-z_][a-z_0-9]*$'
-
-  # Enum constants:
-  # Require enumerator names to be in snake_case.
-  - key: readability-identifier-naming.EnumConstantCase
-    value: lower_case
-  - key: readability-identifier-naming.EnumConstantRegex
-    value: '^[a-z_][a-z_0-9]*$'
+    value: '^[a-z_][a-z_0-9]*_(?:t|fn)$'
 
 # Additional notes:
-# - Function-like macro detection is not supported by clang-tidy; all macros are checked against the same rules.
-# - Enforcement of pointer-specific Hungarian notation (e.g. for out_, p_, jo_) is performed solely by the regex,
-#   without any semantic check on the pointer type.
+# - Function-like macro detection is not supported by clang-tidy; macros are not checked
+# - Enforcement of pointer-specific Hungarian notation (e.g. for out_, p_, jo_) is performed solely by the regex, without any semantic check on the pointer type.
 # - Enum min/max naming (min_<prefix> and max_<prefix>) and X-macro conventions cannot be enforced automatically.
 # - There is no way to validate that unsigned types are used only for sizes and port numbers.
-...
+# - Typedef function pointer suffix cannot be represented based on the underlying type: both suffixes are always allowed.
+# - Enum constant cases changes depending on whether the enum is anonymous, so this can't be represented either.
+# - can't represent pointer conventions because the prefix doesn't apply to opaque handles and pointers to many. just regular pointers.
+# - cannot restrict to just out_ parameters

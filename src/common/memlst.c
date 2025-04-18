@@ -1,11 +1,10 @@
 #define MEMLST_IMPL
 
 #include "memlst.h"
-#include <assert.h>
-#include "json-c.h"
+#include "json_object.h"
 #include "stb_ds.h"
+#include <assert.h>
 #include <stdio.h>
-
 
 struct memlst {
     void *ptr;
@@ -16,8 +15,8 @@ memlst_t *memlst_init() {
     return NULL;
 }
 
-void dtor_json_object(void *json_object) {
-    json_object_put(json_object);
+void dtor_json_object(void *jo) {
+    json_object_put(jo);
 }
 
 void memlst_destroy(memlst_t **memlst FILE_LINE_PARAMS) {

@@ -4,10 +4,10 @@
 /// @date 1/02/2025
 
 #include "server/tests.h"
-#include "tchatator413/const.h"
-#include <stdlib.h>
 #include "tchatator413/cfg.h"
+#include "tchatator413/const.h"
 #include "tchatator413/db.h"
+#include <stdlib.h>
 
 // #define DO_OBSERVE
 #define OUT stdout

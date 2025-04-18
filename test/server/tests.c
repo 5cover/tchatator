@@ -28,24 +28,24 @@ void test_case_n_actions(test_t *test, int expected) {
     test_case_count(&test->t, test->n_responses, expected, "response");
 }
 
-static inline char const *json_object_get_fmt(json_object *obj) {
-    json_object *fmt_obj;
-    return json_object_is_type(obj, json_type_object) && json_object_object_length(obj) == 1
-        ? json_object_object_get_ex(obj, "$fmt_quoted", &fmt_obj)
-            ? min_json(fmt_obj)
-            : json_object_object_get_ex(obj, "$fmt", &fmt_obj)
-            ? json_object_get_string(fmt_obj)
+static inline char const *json_object_get_fmt(json_object *jo) {
+    json_object *jo_fmt;
+    return json_object_is_type(jo, json_type_object) && json_object_object_length(jo) == 1
+        ? json_object_object_get_ex(jo, "$fmt_quoted", &jo_fmt)
+            ? min_json(jo_fmt)
+            : json_object_object_get_ex(jo, "$fmt", &jo_fmt)
+            ? json_object_get_string(jo_fmt)
             : NULL
         : NULL;
 }
 
 json_object *load_json(char const *input_filename) {
-    json_object *obj = json_object_from_file(input_filename);
-    if (!obj) {
+    json_object *jo = json_object_from_file(input_filename);
+    if (!jo) {
         fprintf(stderr, LOG_FMT_JSON_C("failed to load %s", input_filename));
         exit(EX_DATAERR);
     }
-    return obj;
+    return jo;
 }
 
 json_object *load_jsonf(const char *input_filename, ...) {
@@ -62,14 +62,14 @@ json_object *load_jsonf(const char *input_filename, ...) {
     va_end(ap);
     free(input_fmt);
 
-    json_object *obj = json_tokener_parse(input);
-    if (!obj) {
+    json_object *jo = json_tokener_parse(input);
+    if (!jo) {
         fprintf(stderr, LOG_FMT_JSON_C("failed to load %s", input_filename));
         exit(EX_DATAERR);
     }
     free(input);
 
-    return obj;
+    return jo;
 }
 
 bool json_object_eq_fmt(json_object *jo_actual, json_object *jo_expected) {
@@ -99,9 +99,10 @@ bool json_object_eq_fmt(json_object *jo_actual, json_object *jo_expected) {
     case json_type_object:
         // Two JSON objects are equal if they contain the same properties, regardless of order
         if (json_object_object_length(jo_actual) != json_object_object_length(jo_expected)) return false;
-        json_object_object_foreach(jo_actual, k, a_v) {
-            json_object *e_v;
-            if (!json_object_object_get_ex(jo_expected, k, &e_v) || !json_object_eq_fmt(a_v, e_v)) return false;
+        json_object_object_foreach(jo_actual, key, jo_actual_value) {
+            json_object *jo_expected_value;
+            if (!json_object_object_get_ex(jo_expected, key, &jo_expected_value)
+                || !json_object_eq_fmt(jo_actual_value, jo_expected_value)) return false;
         }
         return true;
     case json_type_array: {

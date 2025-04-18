@@ -9,7 +9,7 @@
 ///
 /// CHANGELOG
 /// 1.1.1
-/// Fixed UB with va_list misuse in _stbtest_test_case
+/// Fixed UB with va_list misuse in i_stbtest_test_case
 /// 1.1.0
 /// Changed table display to come before the summary. Reads better.
 
@@ -25,18 +25,18 @@
 #include <stdio.h>
 
 #ifdef __GNUC__
-#define _STBTEST_ATTR_FORMAT(archetype, string_index, first_to_check) __attribute__((format(archetype, string_index, first_to_check)))
+#define i_stbtest_ATTR_FORMAT(archetype, string_index, first_to_check) __attribute__((format(archetype, string_index, first_to_check)))
 #else
-#define _STBTEST_ATTR_FORMAT(archetype, string_index, first_to_check)
+#define i_stbtest_ATTR_FORMAT(archetype, string_index, first_to_check)
 #endif // __GNUC__
 
 /// @brief Represents a test suite with a name and a collection of test cases.
 struct test {
     char const *name;
-    struct _stbtest_case *cases;
+    struct i_stbtest_case *cases;
 };
 
-struct _stbtest_case {
+struct i_stbtest_case {
     bool ok;
     unsigned line;
     char const *expr; // can be null
@@ -53,14 +53,14 @@ struct _stbtest_case {
 STB_TEST_DEFINITION struct test test_start(char const *name);
 
 /// @brief Add a test case that is always a failure.
-#define test_fail(test, name, ...) _stbtest_test_case(__LINE__, __FILE__, (test), false, "(fail)", (name)__VA_OPT__(, ) __VA_ARGS__)
+#define test_fail(test, name, ...) i_stbtest_test_case(__LINE__, __FILE__, (test), false, "(fail)", (name)__VA_OPT__(, ) __VA_ARGS__)
 /// @brief Add a test case.
-#define test_case(test, expr, name, ...) _stbtest_test_case(__LINE__, __FILE__, (test), (expr), #expr, (name)__VA_OPT__(, ) __VA_ARGS__)
+#define test_case(test, expr, name, ...) i_stbtest_test_case(__LINE__, __FILE__, (test), (expr), #expr, (name)__VA_OPT__(, ) __VA_ARGS__)
 /// @brief Add a test case with the expr and name columns merged.
-#define test_case_wide(test, expr, name, ...) _stbtest_test_case(__LINE__, __FILE__, (test), (expr), NULL, (name)__VA_OPT__(, ) __VA_ARGS__)
+#define test_case_wide(test, expr, name, ...) i_stbtest_test_case(__LINE__, __FILE__, (test), (expr), NULL, (name)__VA_OPT__(, ) __VA_ARGS__)
 
-STB_TEST_DEFINITION bool _stbtest_test_case(unsigned line, char *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...)
-    _STBTEST_ATTR_FORMAT(printf, 6, 7);
+STB_TEST_DEFINITION bool i_stbtest_test_case(unsigned line, char *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...)
+    i_stbtest_ATTR_FORMAT(printf, 6, 7);
 
 /// @brief Finish a test suite and prints the results to the provided output stream.
 ///
@@ -83,7 +83,7 @@ STB_TEST_DEFINITION bool test_end(struct test *test, FILE *output);
 #include <math.h>
 #include <stdarg.h>
 
-#define _stbtest_digit_count(n, base) ((n) == 0 ? 1 : (int)(log(n) / log(base)) + 1)
+#define i_stbtest_digit_count(n, base) ((n) == 0 ? 1 : (int)(log(n) / log(base)) + 1)
 
 struct test test_start(char const *name) {
     return (struct test) {
@@ -92,7 +92,7 @@ struct test test_start(char const *name) {
     };
 }
 
-bool _stbtest_test_case(unsigned line, char *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...) {
+bool i_stbtest_test_case(unsigned line, char *file, struct test *test, bool ok, char const *expr, char const *fmt_name, ...) {
     va_list ap, ap1;
 
     va_start(ap, fmt_name);
@@ -109,7 +109,7 @@ bool _stbtest_test_case(unsigned line, char *file, struct test *test, bool ok, c
     va_end(ap);
 
     arrput(test->cases,
-        ((struct _stbtest_case) {
+        ((struct i_stbtest_case) {
             .ok = ok,
             .line = line,
             .expr = expr,
@@ -129,7 +129,7 @@ bool test_end(struct test *test, FILE *output) {
     int col_len_name = sizeof "info";
 
     for (i = 0; i < arrlen(test->cases); ++i) {
-        struct _stbtest_case const *c = &test->cases[i];
+        struct i_stbtest_case const *c = &test->cases[i];
         c->ok ? ++nb_ok : ++nb_ko;
         if (c->expr) {
             int len;
@@ -141,8 +141,8 @@ bool test_end(struct test *test, FILE *output) {
 
     // Show table if test failed
     if (nb_ko != 0) {
-        int const col_len_num = _stbtest_digit_count(arrlenu(test->cases), 10);
-        int const col_len_line = _stbtest_digit_count(arrlast(test->cases).line, 10);
+        int const col_len_num = i_stbtest_digit_count(arrlenu(test->cases), 10);
+        int const col_len_line = i_stbtest_digit_count(arrlast(test->cases).line, 10);
 
         for (i = 0; i < col_len_num; ++i)
             putc('#', output);
@@ -171,7 +171,7 @@ bool test_end(struct test *test, FILE *output) {
         // Print cases
 
         for (i = 0; i < arrlen(test->cases); ++i) {
-            struct _stbtest_case const *const c = &test->cases[i];
+            struct i_stbtest_case const *const c = &test->cases[i];
             char const *ok = c->ok ? "\033[32;49mOK\033[39;49m" : "\033[31;49mKO\033[39;49m";
             if (c->expr)
                 fprintf(output, "%*d | %s | %-*s | %*u | %-*s | %-*s |\n",

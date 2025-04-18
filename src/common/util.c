@@ -27,17 +27,22 @@ char *vstrfmt(const char *fmt, va_list ap) {
 
     n = vsnprintf(p, size, fmt, ap);
 
-    if (n < 0)
+    if (n < 0) {
+        va_end(ap_copy);
         return NULL;
+    }
 
     /* One extra byte for '\0' */
 
     size = (size_t)n + 1;
     p = malloc(size);
-    if (p == NULL)
+    if (p == NULL) {
+        va_end(ap_copy);
         return NULL;
+    }
 
     n = vsnprintf(p, size, fmt, ap_copy);
+    va_end(ap_copy);
 
     if (n < 0) {
         free(p);
@@ -54,8 +59,8 @@ char *fslurp(FILE *fp) {
     int c;
 
     d_answer = malloc(1024);
-    if (!d_answer)
-        return 0;
+    if (!d_answer) return 0;
+
     while ((c = fgetc(fp)) != EOF) {
         if (i == bufsize - 2) {
             if (bufsize > INT_MAX - 100 - bufsize / 10) {
@@ -75,8 +80,5 @@ char *fslurp(FILE *fp) {
     d_answer[i++] = 0;
 
     d_temp = realloc(d_answer, i);
-    if (d_temp)
-        return d_temp;
-    else
-        return d_answer;
+    return COALESCE(d_temp, d_answer);
 }

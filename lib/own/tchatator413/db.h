@@ -7,9 +7,9 @@
 #define DB_H
 
 #include "errstatus.h"
+#include "memlst.h"
 #include "tchatator413/cfg.h"
 #include "types.h"
-#include "memlst.h"
 
 /// @brief An opaque handle to a database connection.
 typedef union db db_t;

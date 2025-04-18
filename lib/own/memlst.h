@@ -25,7 +25,7 @@ typedef struct memlst memlst_t;
 /// @return A new memory list.
 memlst_t *memlst_init(void);
 
-void dtor_json_object(void *json_object);
+void dtor_json_object(void *jo);
 
 /// @brief Destroy a memory list. Free all allocated memory, including memory for the memory list itself.
 /// @param memlst A memory list.

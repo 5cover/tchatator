@@ -6,13 +6,13 @@
 #ifndef ACTION_H
 #define ACTION_H
 
-#include "json-c.h"
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "const.h"
 #include "cfg.h"
+#include "const.h"
 #include "db.h"
+#include "json_types.h"
 #include "types.h"
 
 /// @brief Status codes for the Tchatator413 protocol, modeled after HTTP status codes.
@@ -179,9 +179,9 @@ void put_role(role_t role, FILE *stream);
 /// @param pmem Parent memory container.
 /// @param db The configuration.
 /// @param db The database connection.
-/// @param obj The JSON object allegedly containing an action.
+/// @param jo The JSON object allegedly containing an action.
 /// @return The parsed action.
-action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *obj);
+action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *jo);
 
 /// @brief Evaluate an action.
 /// @param action The action to evaluate.

@@ -5,12 +5,10 @@
 
 #include <assert.h>
 #include <getopt.h>
-#include "json-c.h"
 #include "memlst.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "tchatator413/cfg.h"
-#include "tchatator413/json-helpers.h"
 #include "tchatator413/tchatator413.h"
 #include "util.h"
 #include <unistd.h>

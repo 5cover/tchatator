@@ -3,10 +3,10 @@
 /// @brief Tchatator413 request parsing and interpretation - Implementation
 /// @date 23/01/2025
 
-#include <assert.h>
-#include <limits.h>
 #include "tchatator413/action.h"
 #include "tchatator413/db.h"
+#include <assert.h>
+#include <limits.h>
 
 response_t response_for_rate_limit(time_t next_request_at) {
     return (response_t) {

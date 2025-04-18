@@ -6,10 +6,10 @@
 #ifndef UUID_H
 #define UUID_H
 
+#include "tchatator413/slice.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "tchatator413/slice.h"
 
 /// @brief Version 4 UUID.
 typedef struct {

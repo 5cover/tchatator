@@ -32,6 +32,10 @@ make # build the client and the server
 
 Naming: use `snake_case` unless specified otherwise.
 
+### Naming
+
+Use a `i_` prefix to signal identifiers that are not meant to be referenced outside of the implementation of a particular module. This prefix not mandatory, but makes this hiding explicit and prevents API misuse.
+
 ### Naming variables
 
 Naming: use hugarian notation with prefixes.

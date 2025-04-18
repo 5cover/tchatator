@@ -3,12 +3,12 @@
 /// @brief Tchatator413 test - memlst
 /// @date 1/02/2025
 
-#include "tests.h"
 #include "memlst.h"
+#include "tests.h"
+#include <fcntl.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 #ifdef NDEBUG
 #error the memlst test cannot be run with NDEBUG since it requires assertions to run.
@@ -37,16 +37,16 @@ static inline void testfree(void *ptr) {
                 close(devnull);                                 \
             }                                                   \
             /* Run the code that might assert*/                 \
-            code;                                               \
+            code; /*NOLINT(bugprone-macro-parentheses)*/        \
             /* If it didn't abort, exit normally */             \
             _exit(0);                                           \
         }                                                       \
         /* Parent: wait for the child and check result */       \
         int status;                                             \
         waitpid(pid, &status, 0);                               \
-        test_case(&t,                                           \
+        test_case(&(t),                                         \
             WIFSIGNALED(status) && WTERMSIG(status) == SIGABRT, \
-            "status == %d", status);            \
+            "status == %d", status);                            \
     } while (0)
 
 struct test test_memlst(void) {

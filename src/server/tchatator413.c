@@ -3,11 +3,11 @@
 /// @brief Tchatator413 Facade - Implementation
 /// @date 1/02/2025
 
+#include "tchatator413/tchatator413.h"
+#include "tchatator413/json-helpers.h"
 #include <assert.h>
 #include <getopt.h>
 #include <stdio.h>
-#include "tchatator413/json-helpers.h"
-#include "tchatator413/tchatator413.h"
 #include <unistd.h>
 
 int tchatator413_run_interactive(cfg_t *cfg, db_t *db, int argc, char **argv) {

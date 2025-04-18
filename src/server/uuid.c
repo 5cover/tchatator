@@ -77,7 +77,7 @@ void uuid4_put(uuid4_t uuid, FILE *stream) {
 
 char hex_half_to_repr(uint8_t value) {
     assert(value < 16);
-    return value < 10 ? '0' + value : 'a' - 10 + value;
+    return (char)(value < 10 ? '0' + value : 'a' - 10 + value);
 }
 
 uint8_t hex_repr_to_half(char c) {

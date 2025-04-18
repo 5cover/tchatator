@@ -30,9 +30,9 @@
 #endif
 
 #ifdef __GNUC__
-#define pq_send_l(val) __extension__({_Static_assert(sizeof val == 4, "type has wrong size"); htonl((uint32_t)val); })
-#define pq_recv_l(type, val) __extension__({_Static_assert(sizeof (type) == sizeof (uint32_t), "use pq_recv_ll"); (type)(ntohl(*(uint32_t *)(void*)(val))); })
-#define pq_recv_ll(type, val) __extension__(({_Static_assert(sizeof (type) == sizeof (uint64_t), "use pq_recv_l"); (type)(ntohll(*(uint64_t *)(void*)(val))); }))
+#define pq_send_l(val) __extension__({_Static_assert(sizeof (val) == 4, "type has wrong size"); htonl((uint32_t)(val)); })
+#define pq_recv_l(type, val) __extension__({_Static_assert(sizeof (type) == sizeof (uint32_t), "use pq_recv_ll"); (type)(ntohl(*(uint32_t *)(void*)(val))); }) // NOLINT(bugprone-casting-through-void)
+#define pq_recv_ll(type, val) __extension__(({_Static_assert(sizeof (type) == sizeof (uint64_t), "use pq_recv_l"); (type)(ntohll(*(uint64_t *)(void*)(val))); })) // NOLINT(bugprone-casting-through-void)
 #else
 #define pq_send_l(val) htonl(val)
 #define pq_recv_l(type, val) (type)(ntohl(*(type *)(void *)(val)))
@@ -47,7 +47,7 @@
 #define log_fmt_pq_result(result) "database: %s\n", PQresultErrorMessage(result)
 
 union db {
-    PGconn *__conn__do_not_use_directly;
+    PGconn *i_conn_do_not_use_directly;
 };
 _Static_assert(sizeof(db_t) == sizeof(PGconn *));
 #define db2conn(db) (PGconn *)(db)
@@ -132,7 +132,7 @@ errstatus_t db_verify_user_constr(db_t *db, cfg_t *cfg, user_identity_t *out_use
     } else {
         out_user->role = pq_recv_l(role_t, PQgetvalue(result, 0, 0));
         if (validate_db_role(cfg, out_user->role)) {
-            res = check_password(constr.password, PQgetvalue(result, 0, 1));
+            res = (errstatus_t)check_password(constr.password, PQgetvalue(result, 0, 1));
             if (res) out_user->id = pq_recv_l(serial_t, PQgetvalue(result, 0, 2));
         } else {
             res = errstatus_handled;
