@@ -1,6 +1,6 @@
 {
   "do": "inbox",
   "with": {
-    "constr": %s
+    "constr": "%s"
   }
 }

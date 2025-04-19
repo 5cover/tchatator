@@ -64,7 +64,7 @@ json_object *load_jsonf(const char *input_filename, ...) {
 
     json_object *jo = json_tokener_parse(input);
     if (!jo) {
-        fprintf(stderr, LOG_FMT_JSON_C("failed to load %s", input_filename));
+        fprintf(stderr, LOG_FMT_JSON_C("failed to load %s: %s", input_filename, input));
         exit(EX_DATAERR);
     }
     free(input);
