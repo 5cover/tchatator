@@ -6,7 +6,7 @@
 #ifndef JSON_C
 #define JSON_C
 
-#include <json-c/json.h>
+#include <json-c/json.h> // IWYU pragma: export
 
 // Some error-catching mechanisms
 

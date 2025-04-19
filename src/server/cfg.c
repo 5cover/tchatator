@@ -9,7 +9,6 @@
 #include "util.h"
 #include <bcrypt/bcrypt.h>
 #include <errno.h>
-#include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>

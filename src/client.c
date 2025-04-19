@@ -1,6 +1,6 @@
+#include "json-c.h"
 #include "util.h"
 #include <arpa/inet.h>
-#include <json-c/json.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -102,7 +102,7 @@ int main(void) {
         case 4:
             printf("Entrez l'ID du message: ");
             scanf("%d", &msg_id);
-            //modif_message(msg_id); // fixme
+            // modif_message(msg_id); // fixme
             break;
         case 5:
             printf("Entrez l'ID du message: ");

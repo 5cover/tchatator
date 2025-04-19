@@ -1,7 +1,7 @@
 #define MEMLST_IMPL
 
 #include "memlst.h"
-#include "json_object.h"
+#include "json-c.h"
 #include "stb_ds.h"
 #include <assert.h>
 #include <stdio.h>

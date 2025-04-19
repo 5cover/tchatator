@@ -4,7 +4,6 @@
 /// @date 1/02/2025
 
 #include "tests.h"
-#include "json-c.h"
 #include "tchatator413/json-helpers.h"
 #include <stdarg.h>
 #include <sys/types.h>

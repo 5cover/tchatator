@@ -3,7 +3,6 @@
 /// @brief Tchatator413 protocol - Implementation (JSON-related)
 /// @date 23/01/2025
 
-#include "json-c.h"
 #include "tchatator413/action.h"
 #include "tchatator413/errstatus.h"
 #include "tchatator413/json-helpers.h"

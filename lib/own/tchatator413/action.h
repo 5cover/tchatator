@@ -12,7 +12,7 @@
 #include "cfg.h"
 #include "const.h"
 #include "db.h"
-#include "json_types.h"
+#include "json-c.h"
 #include "types.h"
 
 /// @brief Status codes for the Tchatator413 protocol, modeled after HTTP status codes.

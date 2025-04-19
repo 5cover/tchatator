@@ -6,7 +6,7 @@
 #ifndef JSON_HELPERS
 #define JSON_HELPERS
 
-#include "json_types.h"
+#include "json-c.h"
 #include "slice.h"
 #include "util.h"
 #include <stdbool.h>
