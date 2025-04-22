@@ -15,11 +15,12 @@
 
 #define SCHEMA "tchatator"
 #define TBL_USER SCHEMA ".user"
+#define TBL_MSG SCHEMA ".msg"
 #define TBL__MSG SCHEMA "._msg"
-#define TBL_INBOX SCHEMA ".inbox"
+#define TBL_MSG_ORDERED SCHEMA ".msg_ordered"
 #define TBL_MEMBER SCHEMA ".member"
 #define TBL_PRO SCHEMA ".pro"
-#define CALL_FUN_SEND_MSG(arg1, arg2, arg3) SCHEMA ".send_msg(" arg1 "::int," arg2 "::int," arg3 "::varchar)"
+#define CALL_SEND_MSG(arg1, arg2, arg3) SCHEMA ".send_msg(" arg1 "::int," arg2 "::int," arg3 "::varchar)"
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define ntohll(x) x
@@ -31,7 +32,7 @@
 
 #ifdef __GNUC__
 #define pq_send_l(val) __extension__({_Static_assert(sizeof (val) == 4, "type has wrong size"); htonl((uint32_t)(val)); })
-#define pq_recv_l(type, val) __extension__({_Static_assert(sizeof (type) == sizeof (uint32_t), "use pq_recv_ll"); (type)(ntohl(*(uint32_t *)(void*)(val))); }) // NOLINT(bugprone-casting-through-void)
+#define pq_recv_l(type, val) __extension__({_Static_assert(sizeof (type) == sizeof (uint32_t), "use pq_recv_ll"); (type)(ntohl(*(uint32_t *)(void*)(val))); })    // NOLINT(bugprone-casting-through-void)
 #define pq_recv_ll(type, val) __extension__(({_Static_assert(sizeof (type) == sizeof (uint64_t), "use pq_recv_l"); (type)(ntohll(*(uint64_t *)(void*)(val))); })) // NOLINT(bugprone-casting-through-void)
 #else
 #define pq_send_l(val) htonl(val)
@@ -43,8 +44,9 @@
 
 #define pq_recv_timestamp(val) ((time_t)(pq_recv_ll(uint64_t, val) / 1000000 + PG_EPOCH))
 
-#define log_fmt_pq(db) "database: %s\n", PQerrorMessage(db)
-#define log_fmt_pq_result(result) "database: %s\n", PQresultErrorMessage(result)
+#define LOG_CATEGORY "database"
+#define log_fmt_pq(db) LOG_CATEGORY ": %s\n", PQerrorMessage(db)
+#define log_fmt_pq_result(result) LOG_CATEGORY ": %s\n", PQresultErrorMessage(result)
 
 union db {
     PGconn *i_conn_do_not_use_directly;
@@ -219,12 +221,12 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, const char *name) {
     return res;
 }
 
-errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *p_user) {
+errstatus_t db_get_user(db_t *db, memlst_t **p_mem, cfg_t *cfg, user_t *p_user) {
     uint32_t const arg1 = pq_send_l(p_user->id);
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = memlst_add(pmem, (dtor_fn)PQclear,
+    PGresult *result = memlst_add(p_mem, (dtor_fn)PQclear,
         PQexecParams(db2conn(db), "select role,user_id,member_user_name,pro_business_name from " TBL_USER " where user_id=$1",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
@@ -258,7 +260,7 @@ int db_count_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipient_id
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2 };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2 };
     int const args_fmt[array_len(args)] = { 1, 1 };
-    PGresult *result = PQexecParams(db2conn(db), "select count(*) from " TBL__MSG " where coalesce(user_id_sender,0)=$1 and user_id_recipient=$2",
+    PGresult *result = PQexecParams(db2conn(db), "select count(*) from " TBL_MSG " where coalesce(user_id_sender,0)=$1 and user_id_recipient=$2",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     int res;
@@ -279,7 +281,7 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2, content };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2 };
     int const args_fmt[array_len(args)] = { 1, 1, 0 };
-    PGresult *result = PQexecParams(db2conn(db), "select " CALL_FUN_SEND_MSG("$1", "$2", "$3"),
+    PGresult *result = PQexecParams(db2conn(db), "select " CALL_SEND_MSG("$1", "$2", "$3"),
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     serial_t res;
@@ -296,7 +298,7 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
     return res;
 }
 
-errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
+errstatus_t db_get_inbox(db_t *db, memlst_t **p_mem, cfg_t *cfg,
     int32_t limit,
     int32_t offset,
     serial_t recipient_id,
@@ -306,8 +308,8 @@ errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
     char const *const args[] = { (char const *)&arg1, (char const *)&arg2, (char const *)&arg3 };
     int const args_len[array_len(args)] = { sizeof arg1, sizeof arg2, sizeof arg3 };
     int const args_fmt[array_len(args)] = { 1, 1, 1 };
-    PGresult *result = memlst_add(pmem, (dtor_fn)PQclear,
-        PQexecParams(db2conn(db), "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_INBOX " where user_id_recipient=$1 limit $2::int offset $3::int",
+    PGresult *result = memlst_add(p_mem, (dtor_fn)PQclear,
+        PQexecParams(db2conn(db), "select msg_id, content, sent_at, read_age, edited_age, user_id_sender from " TBL_MSG_ORDERED " where user_id_recipient=$1 limit $2::int offset $3::int",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
     if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -316,7 +318,7 @@ errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
     }
 
     int32_t ntuples = MIN(PQntuples(result), limit);
-    out_msgs->msgs = memlst_add(pmem, free, malloc(sizeof *out_msgs->msgs * ntuples));
+    out_msgs->msgs = memlst_add(p_mem, free, malloc(sizeof *out_msgs->msgs * ntuples));
     if (!out_msgs->msgs) errno_exit("malloc");
     out_msgs->n_msgs = (size_t)ntuples;
     for (int32_t i = 0; i < ntuples; ++i) {
@@ -334,12 +336,12 @@ errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
     return errstatus_ok;
 }
 
-errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *p_msg) {
+errstatus_t db_get_msg(db_t *db, memlst_t **p_mem, cfg_t *cfg, msg_t *p_msg) {
     uint32_t const arg1 = pq_send_l(p_msg->id);
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = memlst_add(pmem, (dtor_fn)PQclear,
+    PGresult *result = memlst_add(p_mem, (dtor_fn)PQclear,
         PQexecParams(db2conn(db), "select content, sent_at, read_age, edited_age, deleted_age, user_id_sender, user_id_recipient from " TBL__MSG " where msg_id=$1",
             array_len(args), NULL, args, args_len, args_fmt, 1));
 
@@ -366,7 +368,7 @@ errstatus_t db_rm_msg(db_t *db, cfg_t *cfg, serial_t msg_id) {
     char const *const args[] = { (char const *)&arg1 };
     int const args_len[array_len(args)] = { sizeof arg1 };
     int const args_fmt[array_len(args)] = { 1 };
-    PGresult *result = PQexecParams(db2conn(db), "delete from " TBL__MSG " where msg_id=$1",
+    PGresult *result = PQexecParams(db2conn(db), "delete from " TBL_MSG " where msg_id=$1",
         array_len(args), NULL, args, args_len, args_fmt, 1);
 
     errstatus_t res;
@@ -386,6 +388,7 @@ errstatus_t db_rm_msg(db_t *db, cfg_t *cfg, serial_t msg_id) {
 
 errstatus_t db_transaction(db_t *db, cfg_t *cfg, transaction_fn body, void *ctx) {
     PGresult *result = PQexec(db2conn(db), "begin");
+    cfg_log(cfg, log_debug, LOG_CATEGORY ": BEGIN\n");
 
     errstatus_t res;
 
@@ -400,6 +403,7 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, transaction_fn body, void *ctx)
 
         // End the transaction now.
         result = PQexec(db2conn(db), res == errstatus_ok ? "commit" : "rollback");
+        cfg_log(cfg, log_debug, LOG_CATEGORY ": %s\n", res == errstatus_ok ? "COMMIT" : "ROLLBACK");
 
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
             cfg_log(cfg, log_error, log_fmt_pq_result(result));
@@ -409,5 +413,27 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, transaction_fn body, void *ctx)
 
     PQclear(result);
 
+    return res;
+}
+
+errstatus_t db_use_test_data(db_t *db, cfg_t *cfg, test_data_t subject) {
+    static char *test_data_queries[] = {
+        // encapsulate strlit in macro if we add more
+        [test_data_msgs] = "call " SCHEMA ".use_test_data_msgs()",
+        [test_data_users] = "call " SCHEMA ".use_test_data_users()",
+    };
+
+    cfg_log(cfg, log_info, LOG_CATEGORY ": %s\n", test_data_queries[subject]);
+    PGresult *result = PQexec(db2conn(db), test_data_queries[subject]);
+
+    errstatus_t res;
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        cfg_log(cfg, log_error, log_fmt_pq_result(result));
+        res = errstatus_handled;
+    } else {
+        res = errstatus_ok;
+    }
+
+    PQclear(result);
     return res;
 }

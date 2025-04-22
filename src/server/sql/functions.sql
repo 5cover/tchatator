@@ -4,7 +4,6 @@ set
     plpgsql.extra_errors to 'all';
 
 -- Functions stating with _ are internal
-
 create function _insert_msg (p_user_id_sender int, p_user_id_recipient int, p_content varchar) returns int as $$
 with msg_id as (insert into
     tchatator._msg (user_id_sender, user_id_recipient, content)
@@ -45,9 +44,9 @@ $$ language sql strict;
 create function _insert_user (inout new record) as $$
 begin
     insert into
-        tchatator._user (api_key, password_hash)
+        tchatator._user (user_id, api_key, password_hash)
     values
-        (new.api_key, new.password_hash)
+        (new.user_id, new.api_key, new.password_hash)
     returning
         user_id into new.user_id;
 end
@@ -67,3 +66,8 @@ begin
         user_id = new.user_id;
 end
 $$ language plpgsql;
+
+-- Computes the difference in seconds between two timestamps
+create function _seconds_diff (t1 timestamp, t2 timestamp) returns int as $$
+select extract(epoch from t1 - t2)::int;
+$$ language sql strict immutable;

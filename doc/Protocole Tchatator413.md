@@ -276,7 +276,7 @@ Argument|Type|Description
 `constr`|Chaîne de connection|Votre chaîne de connection
 `page`|integer|Numéro de page (1-based). Optionnel (1 par défaut)
 
-Obtient l'historique des messages reçus, avec pagination.
+Obtient l'historique des messages reçus, avec pagination. Les messages sont ordonnées par date d'envoi, du plus récent au plus ancien.
 
 #### Réponse nominale
 

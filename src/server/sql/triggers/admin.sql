@@ -6,8 +6,8 @@ set
 -- Create
 create function ftg_admin_insert () returns trigger as $$
 begin
-    new = _insert_user(new);
-    insert into _admin (
+    new = tchatator._insert_user(new);
+    insert into tchatator._admin (
         user_id
     ) values (
         new.user_id
@@ -22,7 +22,7 @@ execute function ftg_admin_insert ();
 -- Update
 create function ftg_admin_update () returns trigger as $$
 begin
-    call update_user(old, new);
+    call tchatator.update_user(old, new);
     return new;
 end
 $$ language plpgsql;
@@ -34,7 +34,7 @@ execute function ftg_admin_update ();
 -- Delete
 create function ftg_admin_delete () returns trigger as $$
 begin
-    delete from _user where user_id = old.id;
+    delete from tchatator._user where user_id = old.user_id;
     return old;
 end
 $$ language plpgsql;

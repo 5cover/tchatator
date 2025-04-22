@@ -6,8 +6,8 @@ set
 -- Create
 create function ftg_pro_insert () returns trigger as $$
 begin
-    new = _insert_user(new);
-    insert into _pro (
+    new = tchatator._insert_user(new);
+    insert into tchatator._pro (
         user_id,
         business_name
     ) values (
@@ -24,8 +24,8 @@ execute function ftg_pro_insert ();
 -- Update
 create function ftg_pro_update () returns trigger as $$
 begin
-    call update_user(old, new);
-    update _pro
+    call tchatator.update_user(old, new);
+    update tchatator._pro
     set
         business_name = new.business_name
     where
@@ -41,7 +41,7 @@ execute function ftg_pro_update ();
 -- Delete
 create function ftg_pro_delete () returns trigger as $$
 begin
-    delete from _user where user_id = old.id;
+    delete from tchatator._user where user_id = old.user_id;
     return old;
 end
 $$ language plpgsql;

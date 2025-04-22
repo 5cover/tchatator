@@ -34,7 +34,9 @@ Naming: use `snake_case` unless specified otherwise.
 
 ### Naming
 
-Use a `i_` prefix to signal identifiers that are not meant to be referenced outside of the implementation of a particular module. This prefix not mandatory, but makes this hiding explicit and prevents API misuse.
+Use a `i_` prefix to signal "internal" identifiers that are not meant to be referenced outside of the implementation of a particular module. This prefix not mandatory, but makes this hiding explicit and prevents API misuse.
+
+Such identifiers are called "bounded". Their usage must be controlled.
 
 ### Naming variables
 
@@ -42,22 +44,16 @@ Naming: use hugarian notation with prefixes.
 
 prefix|use for|means|example
 -|-|-|-
-`out_`|out pointer parameters|this is an out parameter; the dereferenced value is undefined at the start of the function. The value may be assigned according to the function's contract. Implies `p_` after being assigned to.|`out_user`
-`g_`|globals|this is a **g**lobal variable|`g_global_state`
-`s_`|statics|this is a **s**tatic variable|`static_state`
-`p_`|dereferenceable pointers-to-one (not `void*` or opaque handles, or types not meant to be dereferenced by calling code, like `FILE*`). Doesn not apply to arrays or strings.|this is a **p**ointer that can be dereferenced to a single value|`p_test`
-`jo_`|JSON objects (`struct json_object*`, from `json-c`)|this is a **J**SON **o**bject handle|`jo_user`
+`out`|out pointer parameters|this is an out parameter; the dereferenced value is undefined at the start of the function. The value may be assigned according to the function's contract. Implies `p` after being assigned to.|`out_user`
+`g`|globals|this is a **g**lobal variable|`g_global_state`
+`s`|statics|this is a **s**tatic variable|`static_state`
+`p`|dereferenceable pointers-to-one (not `void*` or opaque handles, or types not meant to be dereferenced by calling code, like `FILE*`). Doesn not apply to arrays or strings.|this is a **p**ointer that can be dereferenced to a single value|`p_test`
+`jo`|JSON objects (`struct json_object*`, from `json-c`)|this is a **J**SON **o**bject handle|`jo_user`
+`fmt`|Format strings|This variable contains a format string|`fmt`, `fmt_info`
 
 Prefixes can be combined in table order (such as `gsp_` for a global static pointer).
 
-Prefixes can be repeated when applicable such as `pp_` for double pointers. Example:
-
-```c
-// modifiers are ordered based on the type syntax. here z is first because the char pointer star comes first.
-char **zd_argv; // z for the inner strings, d for the indesable array of pointers
-```
-
-Naming exception: `memlst_t **pmem`. `pmem` indicates "parent memory" and is clearer than `p_pmem`. Such pointers are usually unique and aren't dereferenced locally, so there's really no need for a `p_` prefix.
+Prefixes can be repeated when applicable such as `pp_` for double pointers.
 
 ### Typedefs
 

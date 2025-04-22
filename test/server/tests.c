@@ -130,5 +130,5 @@ bool test_output_json_file(test_t *p_test, json_object *jo_output, char const *e
 
     bool ok = json_object_eq_fmt(jo_output, jo_output_expected);
     json_object_put(jo_output_expected);
-    return test_case_wide(&p_test->t, ok, "%s == cat %s", min_json(jo_output), expected_output_filename);
+    return test_case(&p_test->t, ok, "%s == cat %s", min_json(jo_output), expected_output_filename);
 }

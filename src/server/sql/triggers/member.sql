@@ -6,8 +6,8 @@ set
 -- Create
 create function ftg_member_insert () returns trigger as $$
 begin
-    new = _insert_user(new);
-    insert into _member (
+    new = tchatator._insert_user(new);
+    insert into tchatator._member (
         user_id,
         user_name
     ) values (
@@ -24,8 +24,8 @@ execute function ftg_member_insert ();
 -- Update
 create function ftg_member_update () returns trigger as $$
 begin
-    call update_user(old, new);
-    update _member
+    call tchatator.update_user(old, new);
+    update tchatator._member
     set
         user_name = new.user_name
     where
@@ -41,7 +41,7 @@ execute function ftg_member_update ();
 -- Delete
 create function ftg_member_delete () returns trigger as $$
 begin
-    delete from _user where user_id = old.id;
+    delete from tchatator._user where user_id = old.user_id;
     return old;
 end
 $$ language plpgsql;

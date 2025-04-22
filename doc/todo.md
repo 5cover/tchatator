@@ -9,7 +9,7 @@
 ---
 
 - [x] use `""` for user (tchatator413/...) includes instead of `<>`
-- [ ] write a test for "user" view role constant values
+- [ ] write a test for "user" view role literal constant values expressed in sql
 - [ ] write geenral db unit tests for CRUD and triggers
 - [x] change admin user id representation : there is a duplication : admin role + id = 0. Solution: say user with ID 0 is "root aka the super-user" and has admin permissions. Other admins can be defined.
 - [x] remove session managment: it only complicate the protocol: api keys are enough of an an authentification
@@ -24,6 +24,7 @@
 - [ ] remove JSONf. no need for a custom format. build a json object from placeholders instead. maybe using json pointers.
 - [ ] object macros for test passwords
 - [ ] turn macros in action-json into static inline functions
+- [ ] mark message as read
 
 ## bugs
 

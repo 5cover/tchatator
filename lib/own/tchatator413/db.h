@@ -84,23 +84,23 @@ serial_t db_get_user_id_by_name(db_t *db, cfg_t *cfg, char const *name);
 
 /// @brief Fills a user record from its ID. If @p user->id is undefined, the behavior is undefined.
 /// @param db The database.
-/// @param pmem Parent memory owner.
+/// @param p_mem Parent memory owner.
 /// @param cfg The configuration.
 /// @param p_user The pointer to the user record to fill.
 /// @return @ref errstatus_handled A database error occured. A message has been shown. @p user is untouched.
 /// @return @ref errstatus_error No user of ID @p user->id exists in the database. @p user is untouched.
 /// @return @ref errstatus_ok Success.
-errstatus_t db_get_user(db_t *db, memlst_t **pmem, cfg_t *cfg, user_t *p_user);
+errstatus_t db_get_user(db_t *db, memlst_t **p_mem, cfg_t *cfg, user_t *p_user);
 
 /// @brief Retrieves a message from the database. If @p msg->id is undefined, the behavior is undefined.
 /// @param db The database.
-/// @param pmem Parent memory owner.
+/// @param p_mem Parent memory owner.
 /// @param cfg The configuration.
 /// @param p_msg The pointer to the message to be filled with the retrieved data.
 /// @return @ref errstatus_ok The message was successfully retrieved.
 /// @return @ref errstatus_error The message could not be retrieved. No message of ID @p msg->id exists in the database.
 /// @return @ref errstatus_handled A database error occured. A message has been shown. @p msg is untouched.
-errstatus_t db_get_msg(db_t *db, memlst_t **pmem, cfg_t *cfg, msg_t *p_msg);
+errstatus_t db_get_msg(db_t *db, memlst_t **p_mem, cfg_t *cfg, msg_t *p_msg);
 
 /// @brief Check a password against the stored hash for an user.
 /// @param db The database.
@@ -121,7 +121,7 @@ errstatus_t db_check_password(db_t *db, cfg_t *cfg, serial_t user_id, char const
 /// @return @ref errstatus_error No user of ID @p user_id exists in the database.
 int db_get_user_role(db_t *db, cfg_t *cfg, serial_t user_id);
 
-/// @brief Counts the amount of messages sent from sender to a recipient
+/// @brief Counts the number of (non-deleted) messages sent from sender to a recipient
 /// @param db The database.
 /// @param cfg The configuration.
 /// @param sender_id The ID of the sender user of the messages. (@c 0 for adminitrator)
@@ -143,7 +143,7 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
 
 /// @brief Creates an array with the messages an user has recieved, sorted by sent/edited date, in reverse chronological order.
 /// @param db The database.
-/// @param pmem Parent memory owner.
+/// @param p_mem Parent memory owner.
 /// @param cfg The configuration.
 /// @param limit The maximum number of messages to fetch.
 /// @param offset The offset of the query.
@@ -152,7 +152,7 @@ serial_t db_send_msg(db_t *db, cfg_t *cfg, serial_t sender_id, serial_t recipien
 /// @return @ref errstatus_ok On success.
 /// @return @ref errstatus_handled A database error occured. A message has been shown. @p out_user is untouched.
 /// @remark The returned msg_list is owned by the caller.
-errstatus_t db_get_inbox(db_t *db, memlst_t **pmem, cfg_t *cfg,
+errstatus_t db_get_inbox(db_t *db, memlst_t **p_mem, cfg_t *cfg,
     int32_t limit,
     int32_t offset,
     serial_t recipient_id,
@@ -179,5 +179,20 @@ typedef errstatus_t (*transaction_fn)(db_t *db, cfg_t *cfg, void *ctx);
 /// @param ctx The context to pass to @p {body}. Can be @c {NULL}.
 /// @return The error status of @p {body}, or of the BEGIN, COMMIT or ROLLBACK action if they weren't successful.
 errstatus_t db_transaction(db_t *db, cfg_t *cfg, transaction_fn body, void *ctx);
+
+/// @brief Enumeration of test data types that can be loaded into the database.
+/// @details Specifies different sets of predefined test data for database testing or initialization.
+typedef enum {
+    test_data_msgs,
+    test_data_users,
+} test_data_t;
+
+/// @brief Load predefined test data into the database for a specific subject.
+/// @param db The database.
+/// @param cfg The configuration.
+/// @param subject Specifies which set of test data to load.
+/// @return @ref errstatus_ok On success.
+/// @return @ref errstatus_handled A database error occured. A message has been shown.
+errstatus_t db_use_test_data(db_t *db, cfg_t *cfg, test_data_t subject);
 
 #endif // DB_H

@@ -11,16 +11,19 @@ select
     user_id_sender,
     user_id_recipient
 from
-    _msg;
+    _msg
+where
+    deleted_age is null;
 
 create view
-    inbox as
+    msg_ordered as
 select
     *
 from
     msg
 order by
-    sent_at;
+    sent_at desc,
+    msg_id desc; -- secondary sort to solve conflicts for messages sent on the same second: last inserted first
 
 create view
     "user" as

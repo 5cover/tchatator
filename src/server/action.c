@@ -19,7 +19,7 @@ response_t response_for_rate_limit(time_t next_request_at) {
     };
 }
 
-response_t action_evaluate(action_t const *p_action, memlst_t **pmem, cfg_t *cfg, db_t *db) {
+response_t action_evaluate(action_t const *p_action, memlst_t **p_mem, cfg_t *cfg, db_t *db) {
     response_t rep = { 0 };
 
 #define fail(return_status)                               \
@@ -58,7 +58,7 @@ response_t action_evaluate(action_t const *p_action, memlst_t **pmem, cfg_t *cfg
         }
 
         rep.body.DO.user.id = p_action->with.DO.user_id;
-        switch (db_get_user(db, pmem, cfg, &rep.body.DO.user)) {
+        switch (db_get_user(db, p_mem, cfg, &rep.body.DO.user)) {
         case errstatus_handled: fail(status_internal_server_error);
         case errstatus_error: fail(status_not_found);
         default:;
@@ -118,7 +118,7 @@ response_t action_evaluate(action_t const *p_action, memlst_t **pmem, cfg_t *cfg
         default: check_role(role_all);
         }
 
-        if (errstatus_ok != db_get_inbox(db, pmem, cfg, cfg_page_inbox(cfg), cfg_page_inbox(cfg) * (p_action->with.DO.page - 1), user.id, &rep.body.DO)) {
+        if (errstatus_ok != db_get_inbox(db, p_mem, cfg, cfg_page_inbox(cfg), cfg_page_inbox(cfg) * (p_action->with.DO.page - 1), user.id, &rep.body.DO)) {
             fail(status_internal_server_error);
         }
         break;

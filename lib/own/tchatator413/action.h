@@ -176,20 +176,20 @@ response_t response_for_rate_limit(time_t next_request_at);
 void put_role(role_t role, FILE *stream);
 
 /// @brief Parse an action from a JSON object.
-/// @param pmem Parent memory container.
+/// @param p_mem Parent memory container.
 /// @param db The configuration.
 /// @param db The database connection.
 /// @param jo The JSON object allegedly containing an action.
 /// @return The parsed action.
-action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *jo);
+action_t action_parse(memlst_t **p_mem, cfg_t *cfg, db_t *db, json_object const *jo);
 
 /// @brief Evaluate an action.
 /// @param p_action The action to evaluate.
-/// @param pmem Parent memory container.
+/// @param p_mem Parent memory container.
 /// @param cfg The configuration.
 /// @param db The database connection.
 /// @return The response to the action.
-response_t action_evaluate(action_t const *p_action, memlst_t **pmem, cfg_t *cfg, db_t *db);
+response_t action_evaluate(action_t const *p_action, memlst_t **p_mem, cfg_t *cfg, db_t *db);
 
 /// @brief Convert an action response to JSON.
 /// @param p_response The action response.

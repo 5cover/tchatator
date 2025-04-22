@@ -56,7 +56,9 @@ typedef struct {
 typedef struct {
     char *content;
     time_t sent_at;
-    int32_t read_age, edited_age, deleted_age;
+    int32_t read_age; ///< @brief @c 0 if not relevant.
+    int32_t edited_age; ///< @brief @c 0 if not relevant.
+    int32_t deleted_age; ///< @brief @c 0 if not relevant.
     serial_t id, user_id_sender, user_id_recipient;
 } msg_t;
 

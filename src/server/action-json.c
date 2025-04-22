@@ -29,7 +29,7 @@ static inline serial_t get_user_id(cfg_t *cfg, db_t *db, json_object *jo_user) {
     return errstatus_error;
 }
 
-action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *jo) {
+action_t action_parse(memlst_t **p_mem, cfg_t *cfg, db_t *db, json_object const *jo) {
     // json_object internal memory is not considered stable enough to reuse outside of this function, so we must duplicate extracted pointers (such as strings).
 
     action_t action = { 0 };
@@ -90,7 +90,7 @@ action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *
         if (!json_object_get_string_strict(jo, out_value)) {       \
             fail_type(arg_loc(key), jo, json_type_string);         \
         }                                                          \
-        if (!((out_value)->val = memlst_add(pmem, free,            \
+        if (!((out_value)->val = memlst_add(p_mem, free,            \
                   strndup((out_value)->val, (out_value)->len)))) { \
             errno_exit("strdup");                                  \
         }                                                          \
@@ -110,7 +110,7 @@ action_t action_parse(memlst_t **pmem, cfg_t *cfg, db_t *db, json_object const *
         }                                                                                 \
         if (constr.len >= UUID4_REPR_LENGTH + sizeof DELIMITER - 1                        \
             && strneq(constr.val + UUID4_REPR_LENGTH, DELIMITER, sizeof DELIMITER - 1)) { \
-            if (!((out_value)->password = memlst_add(pmem, free,                          \
+            if (!((out_value)->password = memlst_add(p_mem, free,                          \
                       strdup(constr.val + UUID4_REPR_LENGTH + sizeof DELIMITER - 1)))) {  \
                 errno_exit("strdup");                                                     \
             }                                                                             \

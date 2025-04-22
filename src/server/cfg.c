@@ -50,12 +50,14 @@ static inline void i_vlog(char const *file, int line, FILE *stream, log_lvl_t lv
     fprintf(stream, "%s:%s:%d: ", timestr, file, line);
     switch (lvl) {
     case log_error: fputs("error: ", stream); break;
-    case log_info: fputs("info: ", stream); break;
     case log_warning: fputs("warning: ", stream); break;
+    case log_info: fputs("info: ", stream); break;
+    case log_debug: fputs("debug: ", stream); break;
     }
     vfprintf(stream, fmt, ap);
 }
 
+ATTR_FORMAT(printf, 5, 6)
 static inline void i_log(char const *file, int line, FILE *stream, log_lvl_t lvl, char const *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
@@ -185,8 +187,9 @@ void cfg_dump(cfg_t const *cfg) {
 }
 
 bool i_cfg_log(char const *file, int line, cfg_t *cfg, log_lvl_t lvl, char const *fmt, ...) {
-    if (lvl == log_info && cfg->verbosity <= 0
-        || lvl == log_warning && cfg->verbosity < 0) return false;
+    if (lvl == log_warning && cfg->verbosity < 0
+        || lvl == log_info && cfg->verbosity <= 0
+        || lvl == log_debug && cfg->verbosity != INT_MAX) return false;
     va_list ap;
     va_start(ap, fmt);
     i_vlog(file, line, open_log_file(cfg), lvl, fmt, ap);

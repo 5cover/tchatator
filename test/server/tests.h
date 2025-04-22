@@ -64,7 +64,7 @@ void observe_put_role(void);
 
 /// @brief Expands to the signature of a Tchattator413 test function
 /// @param name The unquoted name of the test.
-#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t * *_pmem, cfg_t * _cfg, db_t * _db)
+#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t * *i_p_mem, cfg_t * i_cfg, db_t * i_db)
 
 #define DECLARE_TEST(name) TEST_SIGNATURE(name);
 X_TESTS(DECLARE_TEST)
@@ -72,9 +72,9 @@ X_TESTS(DECLARE_TEST)
 
 #define TEST_INIT(name) {       \
     .t = test_start(STR(name)), \
-    .pmem = _pmem,              \
-    .cfg = _cfg,                \
-    .db = _db,                  \
+    .p_mem = i_p_mem,           \
+    .cfg = i_cfg,               \
+    .db = i_db,                 \
 };
 
 #define OUT_JSON(NAME, suffix) "test/server/json/" STR(NAME) "/out" suffix ".json"
@@ -116,10 +116,12 @@ X_TESTS(DECLARE_TEST)
 #define API_KEY_MALFORMED "123e4567e89b12d3a456426614174000"
 
 enum {
-    USER_ID_PRO1 = 1,
-    USER_ID_PRO2,
-    USER_ID_MEMBER1,
-    USER_ID_MEMBER2,
+    USER_ID_PRO1 = 1001,    ///< @brief Test user ID. Required the 'users' test data set.
+    USER_ID_PRO2 = 1002,    ///< @brief Test user ID. Required the 'users' test data set.
+    USER_ID_MEMBER1 = 1003, ///< @brief Test user ID. Required the 'users' test data set.
+    USER_ID_MEMBER2 = 1004, ///< @brief Test user ID. Required the 'users' test data set.
+    MSG_ID_1 = 1005,    ///< @brief Test message ID. Required the 'msgs' test data set.
+    MSG_ID_2 = 1006,    ///< @brief Test message ID. Required the 'msgs' test data set.
 };
 
 /// @brief A Tchattator413 test context.
@@ -127,7 +129,7 @@ typedef struct {
     /// @brief Backing test.
     struct test t;
     int n_actions, n_responses;
-    memlst_t **pmem;
+    memlst_t **p_mem;
     cfg_t *cfg;
     db_t *db;
 } test_t;
@@ -140,7 +142,7 @@ json_object *load_json(char const *input_filename);
 json_object *load_jsonf(char const *input_filename, ...);
 
 #define test_output_json(t, jo_output, jo_expected_output) \
-    test_case_wide(t, json_object_equal(jo_output, jo_expected_output), "output: %s == %s", min_json(jo_output), min_json(jo_expected_output))
+    test_case(t, json_object_equal(jo_output, jo_expected_output), "output:   %s\nexpected: %s", min_json(jo_output), min_json(jo_expected_output))
 
 /// @brief output from JSON file test case
 bool test_output_json_file(test_t *test, json_object *jo_output, char const *expected_output_filename);
@@ -173,9 +175,10 @@ bool json_object_eq_fmt(json_object *jo_actual, json_object *jo_expected);
 extern char ig_test_case_eq_uuid_repr[UUID4_REPR_LENGTH * 2];
 
 /// @brief Test an UUID for equality with an expected value.
-#define TEST_CASE_EQ_UUID(t, actual, expected, fmt) test_case((t), uuid4_eq(actual, expected), \
-    fmt UUID4_FMT " == " UUID4_FMT,                                                            \
-    uuid4_repr(actual, ig_test_case_eq_uuid_repr + UUID4_REPR_LENGTH),                         \
+#define TEST_CASE_EQ_UUID(t, actual, expected, fmt) test_case_expr((t), uuid4_eq(actual, expected), \
+    #actual ": " fmt,                                                                               \
+    UUID4_FMT " == " UUID4_FMT,                                                                     \
+    uuid4_repr(actual, ig_test_case_eq_uuid_repr + UUID4_REPR_LENGTH),                              \
     uuid4_repr(expected, ig_test_case_eq_uuid_repr));
 
 /// @brief A special return value for test transaction returns.

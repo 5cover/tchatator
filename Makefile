@@ -9,6 +9,7 @@ CFLAGS := -std=gnu2x -Wall -Wextra \
          -iquote lib/own -isystem lib/vendor \
 		 -Werror=incompatible-pointer-types \
          -D__SKIP_GNU \
+		 -fmacro-prefix-map=test/server= \
  		 #-fsanitize=address # messes with debugging
 
 LFLAGS_CLIENT := -I/usr/include/json-c -ljson-c

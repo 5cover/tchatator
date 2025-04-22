@@ -52,9 +52,10 @@ void cfg_set_verbosity(cfg_t *cfg, int verbosity);
 
 /// @brief Level of a log entry.
 typedef enum {
-    log_error, ///< Error. Always logged.
-    log_info, ///< Informational. Logged when verbosity is > @c 0.
+    log_error,   ///< Error. Always logged.
     log_warning, ///< Warning. Logged when verbosity is >= @c 0.
+    log_info,    ///< Informational. Logged when verbosity is > @c 0.
+    log_debug,   ///< Debug. Logged when verbisoty == INT_MAX.
 } log_lvl_t;
 
 /// @brief Log a formatted string.
@@ -66,9 +67,10 @@ typedef enum {
 /// @param ... Arguments to the format string.
 /// @return @c true if an entry has been logged.
 /// @return @c false if no entry has been logged.
+ATTR_FORMAT(printf, 5, 6)
 bool i_cfg_log(char const *file, int line,
     cfg_t *cfg, log_lvl_t lvl, char const *fmt, ...);
-#define cfg_log(cfg, lvl, fmt, ...) i_cfg_log(__FILE__, __LINE__, cfg, lvl, fmt __VA_OPT__(,) __VA_ARGS__)
+#define cfg_log(cfg, lvl, fmt, ...) i_cfg_log(__FILE__, __LINE__, cfg, lvl, fmt __VA_OPT__(, ) __VA_ARGS__)
 
 /// @brief Log a single character.
 /// @param cfg The configuration.
