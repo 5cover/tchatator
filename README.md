@@ -13,7 +13,7 @@ Rename the env file and fill placeholder values
 
 ```bash
 cp env .env
-# edit .env...
+ed .env
 ```
 
 Build and run:
