@@ -24,8 +24,8 @@ test_t *base_on_response(void *test) {
 }
 
 void test_case_n_actions(test_t *p_test, int expected) {
-    test_case_count(&p_test->t, p_test->n_actions, expected, "action");
-    test_case_count(&p_test->t, p_test->n_responses, expected, "response");
+    TEST_CASE_COUNT(&p_test->t, p_test->n_actions, expected, "action");
+    TEST_CASE_COUNT(&p_test->t, p_test->n_responses, expected, "response");
 }
 
 static inline char const *json_object_get_fmt(json_object *jo) {

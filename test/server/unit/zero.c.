@@ -30,7 +30,7 @@ TEST_SIGNATURE(NAME) {
     test_case_n_actions(&test, 0);
 
     json_object *jo_expected_output = json_tokener_parse(OUT);
-    test_output_json(&test.t, jo_output, jo_expected_output);
+    TEST_OUTPUT_JSON(&test.t, jo_output, jo_expected_output);
     json_object_put(jo_expected_output);
     json_object_put(jo_output);
     json_object_put(jo_input);

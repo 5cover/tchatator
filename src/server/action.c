@@ -216,6 +216,7 @@ void action_explain(action_t const *action, FILE *output) {
         if (action->with.whois.constr.password) fprintf(output, "¤%s", action->with.whois.constr.password);
         fprintf(output, " user_id=%d\n", action->with.whois.user_id);
         break;
+    // todo, cases below
     case action_type_send:
         fprintf(output, "send\n");
         break;

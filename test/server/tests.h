@@ -136,12 +136,12 @@ typedef struct {
 _Static_assert(offsetof(test_t, t) == 0, "backing test must be at start of struct for implicit base type punning");
 
 /// @brief Test the amount of actions interpeted.
-#define test_case_count(t, actual, expected, singular) test_case(t, (actual) == (expected), "expected %d %s%s, got %d", expected, singular, (expected) == 1 ? "" : "s", actual)
+#define TEST_CASE_COUNT(t, actual, expected, singular) test_case(t, (actual) == (expected), "expected %d %s%s, got %d", expected, singular, (expected) == 1 ? "" : "s", actual)
 
 json_object *load_json(char const *input_filename);
 json_object *load_jsonf(char const *input_filename, ...);
 
-#define test_output_json(t, jo_output, jo_expected_output) \
+#define TEST_OUTPUT_JSON(t, jo_output, jo_expected_output) \
     test_case(t, json_object_equal(jo_output, jo_expected_output), "output:   %s\nexpected: %s", min_json(jo_output), min_json(jo_expected_output))
 
 /// @brief output from JSON file test case

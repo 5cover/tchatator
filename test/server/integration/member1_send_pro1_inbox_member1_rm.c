@@ -102,7 +102,7 @@ static errstatus_t transaction(db_t *db, cfg_t *cfg, void *ctx) {
         json_object *jo_expected_output = memlst_add(p_tst->p_mem, dtor_json_object,
             load_jsonf(OUT_JSONF(NAME, "_send"), gs_msg_id));
 
-        if (!test_output_json(&p_tst->t, jo_output, jo_expected_output)) return errstatus_tested;
+        if (!TEST_OUTPUT_JSON(&p_tst->t, jo_output, jo_expected_output)) return errstatus_tested;
     }
 
     // Pro queries inbox
@@ -117,7 +117,7 @@ static errstatus_t transaction(db_t *db, cfg_t *cfg, void *ctx) {
         json_object *jo_expected_output = memlst_add(p_tst->p_mem, dtor_json_object,
             load_jsonf(OUT_JSONF(NAME, "_inbox"), gs_msg_id, gs_msg_sent_at, USER_ID_MEMBER1, USER_ID_PRO1));
 
-        test_output_json(&p_tst->t, jo_output, jo_expected_output);
+        TEST_OUTPUT_JSON(&p_tst->t, jo_output, jo_expected_output);
     }
 
     // Member deletes message
