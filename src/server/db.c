@@ -417,7 +417,7 @@ errstatus_t db_transaction(db_t *db, cfg_t *cfg, transaction_fn body, void *ctx)
 }
 
 errstatus_t db_use_test_data(db_t *db, cfg_t *cfg, test_data_t subject) {
-    static char *test_data_queries[] = {
+    static char const *const test_data_queries[] = {
         // encapsulate strlit in macro if we add more
         [test_data_msgs] = "call " SCHEMA ".use_test_data_msgs()",
         [test_data_users] = "call " SCHEMA ".use_test_data_users()",
