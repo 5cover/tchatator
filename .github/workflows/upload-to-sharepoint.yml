@@ -28,8 +28,10 @@ jobs:
         set -euo pipefail
         TMP_DIR="$(mktemp -d)"
         while IFS= read -r file; do
-          mkdir -p "$TMP_DIR/$(dirname "$file")"
-          cp "$file" "$TMP_DIR/$file"
+          if [[ -f "$file" ]]; then
+            mkdir -p "$TMP_DIR/$(dirname "$file")"
+            cp "$file" "$TMP_DIR/$file"
+          fi
         done < <(git ls-files)
         echo "TMP_DIR=$TMP_DIR" >> "$GITHUB_OUTPUT"
 
