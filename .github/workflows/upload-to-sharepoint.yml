@@ -25,7 +25,7 @@ jobs:
     - name: Copy tracked files to tmp dir
       id: prepare
       run: |
-        set -euo pipefail
+        set -xeuo pipefail
         TMP_DIR="$(mktemp -d)"
         while IFS= read -r file; do
           if [[ -f "$file" ]]; then
@@ -38,7 +38,7 @@ jobs:
     - name: Get Graph access token
       id: token
       run: |
-        set -euo pipefail
+        set -xeuo pipefail
         token_json=$(curl --fail -s -X POST \
           -d "client_id=$CLIENT_ID" \
           -d "client_secret=$CLIENT_SEC" \
@@ -52,7 +52,7 @@ jobs:
     - name: Resolve Site ID and Drive ID
       id: ids
       run: |
-        set -euo pipefail
+        set -xeuo pipefail
         # Extraire host et chemin relatifs du SITE_URL
         SITE_HOST=$(echo "$SITE_URL" | awk -F/ '{print $3}')                 # engie.sharepoint.com
         SITE_PATH="/$(echo "$SITE_URL" | cut -d/ -f4-)"                      # /sites/ConventionEnforcer
@@ -70,7 +70,7 @@ jobs:
 
     - name: Upload files via Graph
       run: |
-        set -euo pipefail
+        set -xeuo pipefail
         TMP_DIR="${{ steps.prepare.outputs.TMP_DIR }}"
         ACCESS_TOKEN="${{ steps.token.outputs.ACCESS_TOKEN }}"
         DRIVE_ID="${{ steps.ids.outputs.DRIVE_ID }}"
