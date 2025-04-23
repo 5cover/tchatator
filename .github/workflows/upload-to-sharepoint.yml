@@ -39,7 +39,7 @@ jobs:
       id: token
       run: |
         set -euo pipefail
-        token_json=$(curl -s -X POST \
+        token_json=$(curl --fail -s -X POST \
           -d "client_id=$CLIENT_ID" \
           -d "client_secret=$CLIENT_SEC" \
           -d "scope=https://graph.microsoft.com/.default" \
@@ -58,11 +58,11 @@ jobs:
         SITE_PATH="/$(echo "$SITE_URL" | cut -d/ -f4-)"                      # /sites/ConventionEnforcer
         ACCESS_TOKEN="${{ steps.token.outputs.ACCESS_TOKEN }}"
 
-        SITE_META=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+        SITE_META=$(curl --fail -s -H "Authorization: Bearer $ACCESS_TOKEN" \
           "https://graph.microsoft.com/v1.0/sites/$SITE_HOST:$SITE_PATH")
 
         SITE_ID=$(echo "$SITE_META" | $JQ -r '.id')
-        DRIVE_ID=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+        DRIVE_ID=$(curl --fail -s -H "Authorization: Bearer $ACCESS_TOKEN" \
           "https://graph.microsoft.com/v1.0/sites/$SITE_ID/drive" | $JQ -r '.id')
 
         echo "SITE_ID=$SITE_ID"   >> "$GITHUB_OUTPUT"
@@ -80,7 +80,7 @@ jobs:
         find "$TMP_DIR" -type f | while IFS= read -r filepath; do
           rel_path="${filepath#$TMP_DIR/}"   # chemin relatif dans le repo
           echo "::group::Upload $rel_path"
-          curl -s -X PUT \
+          curl --fail -s -X PUT \
             -H "Authorization: Bearer $ACCESS_TOKEN" \
             -H "Content-Type: application/octet-stream" \
             --data-binary @"$filepath" \
