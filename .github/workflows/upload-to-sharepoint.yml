@@ -1,4 +1,3 @@
-# .github/workflows/upload-to-sharepoint.yml
 name: Upload Code to SharePoint
 
 on:
@@ -12,11 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:                       # ⇦ variables réutilisées dans tous les steps
-      TENANT_ID:   ${{ secrets.SP_TENANT_ID }}
-      CLIENT_ID:   ${{ secrets.SP_CLIENT_ID }}
-      CLIENT_SEC:  ${{ secrets.SP_CLIENT_SECRET }}
-      SITE_URL:    ${{ secrets.SP_SITE_URL }}      # ex. https://engie.sharepoint.com/sites/ConventionEnforcer
-      JQ:          jq                              # alias (déjà installé sur les runners)
+      SP_TENANT_ID:     ${{ secrets.SP_TENANT_ID }}
+      SP_CLIENT_ID:     ${{ secrets.SP_CLIENT_ID }}
+      SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
+      SP_SITE_URL:      ${{ secrets.SP_SITE_URL }}      # ex. https://engie.sharepoint.com/sites/ConventionEnforcer
 
     steps:
     - name: Checkout repo
@@ -24,6 +22,7 @@ jobs:
 
     - name: Copy tracked files to tmp dir
       id: prepare
+      shell: bash
       run: |
         set -xeuo pipefail
         TMP_DIR="$(mktemp -d)"
@@ -37,38 +36,41 @@ jobs:
 
     - name: Get Graph access token
       id: token
+      shell: bash
       run: |
         set -xeuo pipefail
         token_json=$(curl --fail -s -X POST \
-          -d "client_id=$CLIENT_ID" \
-          -d "client_secret=$CLIENT_SEC" \
+          -d "SP_CLIENT_ID=$SP_CLIENT_ID" \
+          -d "client_secret=$SP_CLIENT_SECRET" \
           -d "scope=https://graph.microsoft.com/.default" \
           -d "grant_type=client_credentials" \
-          "https://login.microsoftonline.com/$TENANT_ID/oauth2/v2.0/token")
-        ACCESS_TOKEN=$(echo "$token_json" | $JQ -r '.access_token')
+          "https://login.microsoftonline.com/$SP_TENANT_ID/oauth2/v2.0/token")
+        ACCESS_TOKEN=$(echo "$token_json" | jq -r '.access_token')
         echo "::add-mask::$ACCESS_TOKEN"
         echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> "$GITHUB_OUTPUT"
 
     - name: Resolve Site ID and Drive ID
       id: ids
+      shell: bash
       run: |
         set -xeuo pipefail
-        # Extraire host et chemin relatifs du SITE_URL
-        SITE_HOST=$(echo "$SITE_URL" | awk -F/ '{print $3}')                 # engie.sharepoint.com
-        SITE_PATH="/$(echo "$SITE_URL" | cut -d/ -f4-)"                      # /sites/ConventionEnforcer
+        # Extraire host et chemin relatifs du SP_SITE_URL
+        SITE_HOST=$(echo "$SP_SITE_URL" | awk -F/ '{print $3}')                 # engie.sharepoint.com
+        SITE_PATH="/$(echo "$SP_SITE_URL" | cut -d/ -f4-)"                      # /sites/ConventionEnforcer
         ACCESS_TOKEN="${{ steps.token.outputs.ACCESS_TOKEN }}"
 
         SITE_META=$(curl --fail -s -H "Authorization: Bearer $ACCESS_TOKEN" \
           "https://graph.microsoft.com/v1.0/sites/$SITE_HOST:$SITE_PATH")
 
-        SITE_ID=$(echo "$SITE_META" | $JQ -r '.id')
+        SITE_ID=$(echo "$SITE_META" | jq -r '.id')
         DRIVE_ID=$(curl --fail -s -H "Authorization: Bearer $ACCESS_TOKEN" \
-          "https://graph.microsoft.com/v1.0/sites/$SITE_ID/drive" | $JQ -r '.id')
+          "https://graph.microsoft.com/v1.0/sites/$SITE_ID/drive" | jq -r '.id')
 
         echo "SITE_ID=$SITE_ID"   >> "$GITHUB_OUTPUT"
         echo "DRIVE_ID=$DRIVE_ID" >> "$GITHUB_OUTPUT"
 
     - name: Upload files via Graph
+      shell: bash
       run: |
         set -xeuo pipefail
         TMP_DIR="${{ steps.prepare.outputs.TMP_DIR }}"
@@ -78,17 +80,18 @@ jobs:
         export ACCESS_TOKEN DRIVE_ID          # pour la boucle sous `find`
 
         find "$TMP_DIR" -type f | while IFS= read -r filepath; do
-          rel_path="${filepath#$TMP_DIR/}"   # chemin relatif dans le repo
+          rel_path="${filepath#"$TMP_DIR"/}"   # chemin relatif dans le repo
           echo "::group::Upload $rel_path"
           curl --fail -s -X PUT \
             -H "Authorization: Bearer $ACCESS_TOKEN" \
             -H "Content-Type: application/octet-stream" \
             --data-binary @"$filepath" \
             "https://graph.microsoft.com/v1.0/drives/$DRIVE_ID/root:/$rel_path:/content" \
-          | $JQ -r '.id' >/dev/null
+          | jq -r '.id' >/dev/null
           echo "::endgroup::"
         done
 
     - name: Clean tmp dir
       if: always()
+      shell: bash
       run: rm -rf "${{ steps.prepare.outputs.TMP_DIR }}"
