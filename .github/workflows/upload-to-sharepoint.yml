@@ -1,0 +1,40 @@
+# .github/workflows/upload-to-sharepoint.yml
+name: Upload Code to SharePoint
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Copy tracked files to temp folder
+        id: prepare
+        run: |
+          temp_dir=$(mktemp -d)
+          for file in $(git ls-files); do
+            mkdir -p "$temp_dir/$(dirname "$file")"
+            cp "$file" "$temp_dir/$file"
+          done
+          echo "temp_dir=$temp_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to SharePoint
+        uses: pnp/actions-ghaction-spo-upload@v1.0.0
+        with:
+          tenantId: ${{ secrets.SP_TENANT_ID }}
+          clientId: ${{ secrets.SP_CLIENT_ID }}
+          clientSecret: ${{ secrets.SP_CLIENT_SECRET }}
+          siteUrl: ${{ secrets.SP_SITE_URL }}
+          libraryName: ${{ secrets.SP_SITE_DRIVE_NAME }}
+          sourceFolder: ${{ steps.prepare.outputs.temp_dir }}
+
+      - name: Clean up
+        if: always()
+        run: rm -rf ${{ steps.prepare.outputs.temp_dir }}
