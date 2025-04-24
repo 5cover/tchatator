@@ -1,16 +1,15 @@
-# === Config ===
 CC := gcc
 # todo: re-add -pedantic when we get C23 support
 # -Wmissing-prototypes
 CFLAGS := -std=gnu2x -Wall -Wextra \
-         -Wcast-qual -Wcast-align -Wstrict-aliasing -Wpointer-arith \
-         -Winit-self -Wshadow -Wstrict-prototypes -Wformat -Wno-format-zero-length \
-         -Wredundant-decls -Wfloat-equal -Wundef -Wvla -Wno-parentheses \
-         -iquote lib/own -isystem lib/vendor \
-		 -Werror=incompatible-pointer-types \
-         -D__SKIP_GNU \
-		 -fmacro-prefix-map=test/server= \
- 		 #-fsanitize=address # messes with debugging
+		-Wcast-qual -Wcast-align -Wstrict-aliasing -Wpointer-arith \
+		-Winit-self -Wshadow -Wstrict-prototypes -Wformat -Wno-format-zero-length \
+		-Wredundant-decls -Wfloat-equal -Wundef -Wvla -Wno-parentheses \
+		-iquote lib/own -isystem lib/vendor \
+		-Werror=incompatible-pointer-types \
+		-D__SKIP_GNU \
+		-fmacro-prefix-map=test/server= \
+		#-fsanitize=address # messes with debugging
 
 LFLAGS_CLIENT := -I/usr/include/json-c -ljson-c
 LFLAGS_SERVER := -I/usr/include/json-c -ljson-c -I/usr/include/postgresql -L/usr/lib/x86_64-linux-gnu -lpq
@@ -21,9 +20,9 @@ CFLAGS_RELEASE = -O2 -DNDEBUG
 
 CONFIG ?= debug
 ifeq ($(CONFIG), debug)
-    CFLAGS += $(CFLAGS_DEBUG)
+	CFLAGS += $(CFLAGS_DEBUG)
 else
-    CFLAGS += $(CFLAGS_RELEASE)
+	CFLAGS += $(CFLAGS_RELEASE)
 endif
 
 CLANG_TIDY := clang-tidy
@@ -63,7 +62,7 @@ clean:
 	rm -rf $(bin_dir) $(pdf_dir)
 
 tidy:
-	$(CLANG_TIDY) $(TIDY_OPTS) $(shell find src include -name '*.c' -o -name '*.h')
+	$(CLANG_TIDY) $(TIDY_OPTS) $(shell find src lib -name '*.c' -o -name '*.h')
 
 client: src/client.c $(src_client) $(src_common) $(src_lib)
 	mkdir -p $(bin_dir)
