@@ -43,10 +43,10 @@ void observe_put_role(void);
     /* Unit tests */                      \
     X(db_get_user)                        \
     X(db_verify_user_constr)              \
-    /*X(admin_whois_imax)*/               \
+    X(admin_whois_imax)                   \
     /*X(admin_whois_neg1)*/               \
     /*X(admin_whois_pro1)*/               \
-    /*X(empty)*/                          \
+    X(empty)                              \
     /*X(invalid_whois_pro1)*/             \
     /*X(malformed)*/                      \
     /*X(member1_send)*/                   \
@@ -58,23 +58,24 @@ void observe_put_role(void);
     /*X(member1_whois_pro1)*/             \
     /*X(pro1_inbox)*/                     \
     /*X(pro1_send)*/                      \
-    /*X(zero)*/                           \
+    X(zero)                               \
     //
 #pragma GCC diagnostic pop
 
 /// @brief Expands to the signature of a Tchattator413 test function
 /// @param name The unquoted name of the test.
-#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t * *i_p_mem, cfg_t * i_cfg, db_t * i_db)
+#define TEST_SIGNATURE(name) struct test CAT(test_tchatator413_, name)(memlst_t * *i_p_mem, cfg_t * i_cfg, db_t * i_db, constr_t i_root_constr)
 
 #define DECLARE_TEST(name) TEST_SIGNATURE(name);
 X_TESTS(DECLARE_TEST)
 #undef DECLARE_TEST
 
-#define TEST_INIT(name) {       \
-    .t = test_start(STR(name)), \
-    .p_mem = i_p_mem,           \
-    .cfg = i_cfg,               \
-    .db = i_db,                 \
+#define TEST_INIT(name) {        \
+    .t = test_start(STR(name)),  \
+    .p_mem = i_p_mem,            \
+    .cfg = i_cfg,                \
+    .db = i_db,                  \
+    .root_constr = i_root_constr \
 };
 
 #define OUT_JSON(NAME, suffix) "test/server/json/" STR(NAME) "/out" suffix ".json"
@@ -120,8 +121,8 @@ enum {
     USER_ID_PRO2 = 1002,    ///< @brief Test user ID. Required the 'users' test data set.
     USER_ID_MEMBER1 = 1003, ///< @brief Test user ID. Required the 'users' test data set.
     USER_ID_MEMBER2 = 1004, ///< @brief Test user ID. Required the 'users' test data set.
-    MSG_ID_1 = 1005,    ///< @brief Test message ID. Required the 'msgs' test data set.
-    MSG_ID_2 = 1006,    ///< @brief Test message ID. Required the 'msgs' test data set.
+    MSG_ID_1 = 1005,        ///< @brief Test message ID. Required the 'msgs' test data set.
+    MSG_ID_2 = 1006,        ///< @brief Test message ID. Required the 'msgs' test data set.
 };
 
 /// @brief A Tchattator413 test context.
@@ -132,6 +133,7 @@ typedef struct {
     memlst_t **p_mem;
     cfg_t *cfg;
     db_t *db;
+    constr_t root_constr;
 } test_t;
 _Static_assert(offsetof(test_t, t) == 0, "backing test must be at start of struct for implicit base type punning");
 

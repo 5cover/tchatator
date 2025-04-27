@@ -2,8 +2,6 @@
 
 ## right now
 
-- [ ] fix current single test
-- [ ] finish setting up database
 - [ ] progressively reenable tests (disabled by appending `.` to the extension)
 
 ---
@@ -25,6 +23,7 @@
 - [ ] object macros for test passwords
 - [ ] turn macros in action-json into static inline functions
 - [ ] mark message as read
+- [ ] use .o files in makefile to allow incremental builds (thats what it's used for -- i've been wondering for so long)
 
 ## bugs
 

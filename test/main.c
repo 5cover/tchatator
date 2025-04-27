@@ -33,13 +33,13 @@ int main(void) {
     cfg_t *cfg = memlst_add(&mem, (dtor_fn)cfg_destroy, cfg_defaults());
     cfg_set_verbosity(cfg, INT_MAX);
 
+    constr_t root_constr;
     {
-        api_key_t root_api_key;
-        if (!uuid4_parse(&root_api_key, require_env(cfg, "ROOT_API_KEY"))) {
+        if (!uuid4_parse(&root_constr.api_key, require_env(cfg, "ROOT_API_KEY"))) {
             cfg_log(cfg, log_error, "invalid ROOT_API_KEY\n");
             CLEAN_RETURN(mem, EX_USAGE);
         }
-        cfg_load_root_credentials(cfg, root_api_key, require_env(cfg, "ROOT_PASSWORD"));
+        cfg_load_root_credentials(cfg, root_constr.api_key, root_constr.password = require_env(cfg, "ROOT_PASSWORD"));
     }
 
     db_t *db = memlst_add(&mem, (dtor_fn)db_destroy,
@@ -51,7 +51,7 @@ int main(void) {
             require_env(cfg, "DB_PASSWORD")));
     if (!db) CLEAN_RETURN(mem, EX_NODB);
 
-#define CALL_TEST(name) test(test_tchatator413_##name(&mem, cfg, db));
+#define CALL_TEST(name) test(test_tchatator413_##name(&mem, cfg, db, root_constr));
     X_TESTS(CALL_TEST)
 #undef CALL_TEST
 
